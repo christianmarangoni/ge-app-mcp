@@ -671,13 +671,19 @@ async function manageApps(args: any): Promise<any> {
     if (!displayName) throw new Error('display_name is required for creating an app.');
     if (!solutionType) throw new Error('solution_type is required for creating an app.');
 
+    const datastoreIds = args.datastore_ids || [];
+    const enginePayload: any = {
+      displayName,
+      solutionType
+    };
+    if (datastoreIds.length > 0) {
+      enginePayload.dataStoreIds = datastoreIds;
+    }
+
     const [operation] = await client.createEngine({
       parent,
       engineId,
-      engine: {
-        displayName,
-        solutionType
-      }
+      engine: enginePayload
     });
 
     const [createdEngine] = await operation.promise();
