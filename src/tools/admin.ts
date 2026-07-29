@@ -467,7 +467,8 @@ export const adminTools: any[] = [
         enable_bi_directional_audio: { type: 'boolean', description: 'Enable or disable Bi-directional Audio.' },
         enable_cross_product_intelligence: { type: 'boolean', description: 'Enable or disable Cross-product Intelligence.' },
         enable_cross_domain_documents: { type: 'boolean', description: 'Enable or disable Include cross-domain documents.' },
-        enable_all_features: { type: 'boolean', description: 'Convenience flag to enable all 27 feature flags at once.' }
+        enable_all_features: { type: 'boolean', description: 'Convenience flag to enable all 27 feature flags at once.' },
+        disable_all_features: { type: 'boolean', description: 'Convenience flag to disable all 27 feature flags at once.' }
       },
       required: ['action', 'engine_id']
     }
@@ -491,7 +492,8 @@ export const adminTools: any[] = [
         enable_gemini_3_1_pro: { type: 'boolean', description: 'Enable or disable Gemini 3.1 Pro.' },
         enable_gemini_3_5_flash: { type: 'boolean', description: 'Enable or disable Gemini 3.5 Flash.' },
         enable_gemini_3_6_flash: { type: 'boolean', description: 'Enable or disable Gemini 3.6 Flash.' },
-        enable_all_models: { type: 'boolean', description: 'Convenience flag to enable all Gemini models at once.' }
+        enable_all_models: { type: 'boolean', description: 'Convenience flag to enable all Gemini models at once.' },
+        disable_all_models: { type: 'boolean', description: 'Convenience flag to disable all Gemini models at once.' }
       },
       required: ['action', 'engine_id']
     }
@@ -2006,6 +2008,34 @@ async function manageFeatures(args: any): Promise<any> {
       features['bi-directional-audio'] = 'FEATURE_STATE_ON';
       features['cross-product-intelligence'] = 'FEATURE_STATE_ON';
       features['include-cross-domain-documents'] = 'FEATURE_STATE_ON';
+    } else if (args.disable_all_features === true) {
+      features['agent-gallery'] = 'FEATURE_STATE_OFF';
+      features['no-code-agent-builder'] = 'FEATURE_STATE_OFF';
+      features['prompt-gallery'] = 'FEATURE_STATE_OFF';
+      features['model-selector'] = 'FEATURE_STATE_OFF';
+      features['notebook-lm'] = 'FEATURE_STATE_OFF';
+      features['session-sharing'] = 'FEATURE_STATE_OFF';
+      features['personalization-memory'] = 'FEATURE_STATE_OFF';
+      features['disable-canvas'] = 'FEATURE_STATE_ON';
+      features['disable-skills'] = 'FEATURE_STATE_ON';
+      features['disable-image-generation'] = 'FEATURE_STATE_ON';
+      features['disable-video-generation'] = 'FEATURE_STATE_ON';
+      features['disable-agent-sharing'] = 'FEATURE_STATE_ON';
+      features['agent-sharing-without-admin-approval'] = 'FEATURE_STATE_OFF';
+      features['enable-end-user-sharing-with-groups'] = 'FEATURE_STATE_OFF';
+      features['disable-google-drive-upload'] = 'FEATURE_STATE_ON';
+      features['disable-onedrive-upload'] = 'FEATURE_STATE_ON';
+      features['disable-talk-to-content'] = 'FEATURE_STATE_ON';
+      features['personalization-suggested-highlights'] = 'FEATURE_STATE_OFF';
+      features['people-search-org-chart'] = 'FEATURE_STATE_OFF';
+      features['disable-welcome-emails'] = 'FEATURE_STATE_ON';
+      features['disable-projects'] = 'FEATURE_STATE_ON';
+      features['mobile-app-access'] = 'FEATURE_STATE_OFF';
+      features['disable-multi-agent-orchestration'] = 'FEATURE_STATE_ON';
+      features['disable-single-agent-orchestration'] = 'FEATURE_STATE_ON';
+      features['bi-directional-audio'] = 'FEATURE_STATE_OFF';
+      features['cross-product-intelligence'] = 'FEATURE_STATE_OFF';
+      features['include-cross-domain-documents'] = 'FEATURE_STATE_OFF';
     } else {
       if (args.enable_agent_gallery !== undefined) features['agent-gallery'] = setState(args.enable_agent_gallery, features['agent-gallery']);
       if (args.enable_agent_designer !== undefined) features['no-code-agent-builder'] = setState(args.enable_agent_designer, features['no-code-agent-builder']);
@@ -2125,6 +2155,8 @@ async function manageModels(args: any): Promise<any> {
     ];
     if (args.enable_all_models === true) {
       for (const k of modelKeys) modelConfigs[k] = 'MODEL_ENABLED';
+    } else if (args.disable_all_models === true) {
+      for (const k of modelKeys) modelConfigs[k] = 'MODEL_DISABLED';
     } else {
       if (args.enable_gemini_2_5_pro !== undefined) modelConfigs['gemini-2.5-pro'] = setState(args.enable_gemini_2_5_pro, modelConfigs['gemini-2.5-pro']);
       if (args.enable_gemini_3_1_pro !== undefined) modelConfigs['gemini-3.1-pro-preview'] = setState(args.enable_gemini_3_1_pro, modelConfigs['gemini-3.1-pro-preview']);
