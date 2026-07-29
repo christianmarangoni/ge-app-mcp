@@ -2119,20 +2119,20 @@ async function manageModels(args: any): Promise<any> {
       return val ? 'MODEL_ENABLED' : 'MODEL_DISABLED';
     };
 
+    const modelKeys = [
+      'gemini-2.5-pro', 'gemini-3.1-pro-preview', 'gemini-3-flash-preview',
+      'gemini-3.6-flash', 'gemini-3.6-flash-preview', 'gemini-3.6-flash-001',
+      'gemini-3.6', 'gemini-3.6-flash-image', 'gemini-3.6-flash-image-preview',
+      'gemini-3-6-flash', 'gemini-3-6-flash-preview'
+    ];
     if (args.enable_all_models === true) {
-      modelConfigs['gemini-2.5-pro'] = 'MODEL_ENABLED';
-      modelConfigs['gemini-3.1-pro-preview'] = 'MODEL_ENABLED';
-      modelConfigs['gemini-3-flash-preview'] = 'MODEL_ENABLED';
-      modelConfigs['gemini-3.1-flash-image-preview'] = 'MODEL_ENABLED';
-      modelConfigs['gemini-3.1-flash-image'] = 'MODEL_ENABLED';
-      modelConfigs['gemini-2.5-flash-image'] = 'MODEL_ENABLED';
+      for (const k of modelKeys) modelConfigs[k] = 'MODEL_ENABLED';
     } else {
       if (args.enable_gemini_2_5_pro !== undefined) modelConfigs['gemini-2.5-pro'] = setState(args.enable_gemini_2_5_pro, modelConfigs['gemini-2.5-pro']);
       if (args.enable_gemini_3_1_pro !== undefined) modelConfigs['gemini-3.1-pro-preview'] = setState(args.enable_gemini_3_1_pro, modelConfigs['gemini-3.1-pro-preview']);
       if (args.enable_gemini_3_5_flash !== undefined) modelConfigs['gemini-3-flash-preview'] = setState(args.enable_gemini_3_5_flash, modelConfigs['gemini-3-flash-preview']);
       if (args.enable_gemini_3_6_flash !== undefined) {
-        modelConfigs['gemini-3.1-flash-image-preview'] = setState(args.enable_gemini_3_6_flash, modelConfigs['gemini-3.1-flash-image-preview']);
-        modelConfigs['gemini-3.1-flash-image'] = setState(args.enable_gemini_3_6_flash, modelConfigs['gemini-3.1-flash-image']);
+        for (const k of modelKeys.slice(3)) modelConfigs[k] = setState(args.enable_gemini_3_6_flash, modelConfigs[k]);
       }
     }
 
