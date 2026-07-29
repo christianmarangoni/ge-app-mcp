@@ -466,7 +466,32 @@ export const adminTools: any[] = [
         enable_single_agent_orchestration: { type: 'boolean', description: 'Enable or disable Single-Agent Orchestration.' },
         enable_bi_directional_audio: { type: 'boolean', description: 'Enable or disable Bi-directional Audio.' },
         enable_cross_product_intelligence: { type: 'boolean', description: 'Enable or disable Cross-product Intelligence.' },
-        enable_cross_domain_documents: { type: 'boolean', description: 'Enable or disable Include cross-domain documents.' }
+        enable_cross_domain_documents: { type: 'boolean', description: 'Enable or disable Include cross-domain documents.' },
+        enable_all_features: { type: 'boolean', description: 'Convenience flag to enable all 27 feature flags at once.' }
+      },
+      required: ['action', 'engine_id']
+    }
+  },
+  {
+    name: 'gemini_enterprise_manage_models',
+    description: 'Manage Gemini Enterprise Model Availability toggles (e.g. Gemini 2.5 pro, Gemini 3.1 Pro, Gemini 3.5 Flash, Gemini 3.6 Flash).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['get', 'update'],
+          description: 'The action to perform: get or update.'
+        },
+        engine_id: {
+          type: 'string',
+          description: 'The target App / Engine ID (e.g., "tes" or "assistente-bandi-e-appalti").'
+        },
+        enable_gemini_2_5_pro: { type: 'boolean', description: 'Enable or disable Gemini 2.5 pro.' },
+        enable_gemini_3_1_pro: { type: 'boolean', description: 'Enable or disable Gemini 3.1 Pro.' },
+        enable_gemini_3_5_flash: { type: 'boolean', description: 'Enable or disable Gemini 3.5 Flash.' },
+        enable_gemini_3_6_flash: { type: 'boolean', description: 'Enable or disable Gemini 3.6 Flash.' },
+        enable_all_models: { type: 'boolean', description: 'Convenience flag to enable all Gemini models at once.' }
       },
       required: ['action', 'engine_id']
     }
@@ -623,6 +648,8 @@ export async function handleAdminToolCall(name: string, args: any): Promise<any>
       return await manageSkills(args);
     case 'gemini_enterprise_manage_features':
       return await manageFeatures(args);
+    case 'gemini_enterprise_manage_models':
+      return await manageModels(args);
     case 'gemini_enterprise_manage_search_ui':
       return await manageSearchUi(args);
     case 'gemini_enterprise_manage_assistant':
@@ -1951,8 +1978,39 @@ async function manageFeatures(args: any): Promise<any> {
       return val ? 'FEATURE_STATE_OFF' : 'FEATURE_STATE_ON';
     };
 
-    if (args.enable_agent_gallery !== undefined) features['agent-gallery'] = setState(args.enable_agent_gallery, features['agent-gallery']);
-    if (args.enable_agent_designer !== undefined) features['no-code-agent-builder'] = setState(args.enable_agent_designer, features['no-code-agent-builder']);
+    if (args.enable_all_features === true) {
+      features['agent-gallery'] = 'FEATURE_STATE_ON';
+      features['no-code-agent-builder'] = 'FEATURE_STATE_ON';
+      features['prompt-gallery'] = 'FEATURE_STATE_ON';
+      features['model-selector'] = 'FEATURE_STATE_ON';
+      features['notebook-lm'] = 'FEATURE_STATE_ON';
+      features['session-sharing'] = 'FEATURE_STATE_ON';
+      features['personalization-memory'] = 'FEATURE_STATE_ON';
+      features['disable-canvas'] = 'FEATURE_STATE_OFF';
+      features['disable-skills'] = 'FEATURE_STATE_OFF';
+      features['disable-image-generation'] = 'FEATURE_STATE_OFF';
+      features['disable-video-generation'] = 'FEATURE_STATE_OFF';
+      features['disable-agent-sharing'] = 'FEATURE_STATE_OFF';
+      features['agent-sharing-without-admin-approval'] = 'FEATURE_STATE_ON';
+      features['enable-end-user-sharing-with-groups'] = 'FEATURE_STATE_ON';
+      features['disable-google-drive-upload'] = 'FEATURE_STATE_OFF';
+      features['disable-onedrive-upload'] = 'FEATURE_STATE_OFF';
+      features['disable-talk-to-content'] = 'FEATURE_STATE_OFF';
+      features['personalization-suggested-highlights'] = 'FEATURE_STATE_ON';
+      features['people-search-org-chart'] = 'FEATURE_STATE_ON';
+      features['disable-welcome-emails'] = 'FEATURE_STATE_OFF';
+      features['disable-projects'] = 'FEATURE_STATE_OFF';
+      features['mobile-app-access'] = 'FEATURE_STATE_ON';
+      features['disable-multi-agent-orchestration'] = 'FEATURE_STATE_OFF';
+      features['disable-single-agent-orchestration'] = 'FEATURE_STATE_OFF';
+      features['bi-directional-audio'] = 'FEATURE_STATE_ON';
+      features['cross-product-intelligence'] = 'FEATURE_STATE_ON';
+      features['cross-domain-documents'] = 'FEATURE_STATE_ON';
+      features['include-cross-domain-documents'] = 'FEATURE_STATE_ON';
+      features['disable-cross-domain-documents'] = 'FEATURE_STATE_OFF';
+    } else {
+      if (args.enable_agent_gallery !== undefined) features['agent-gallery'] = setState(args.enable_agent_gallery, features['agent-gallery']);
+      if (args.enable_agent_designer !== undefined) features['no-code-agent-builder'] = setState(args.enable_agent_designer, features['no-code-agent-builder']);
     if (args.enable_prompt_gallery !== undefined) features['prompt-gallery'] = setState(args.enable_prompt_gallery, features['prompt-gallery']);
     if (args.enable_model_selector !== undefined) features['model-selector'] = setState(args.enable_model_selector, features['model-selector']);
     if (args.enable_notebook_lm !== undefined) features['notebook-lm'] = setState(args.enable_notebook_lm, features['notebook-lm']);
@@ -1982,6 +2040,7 @@ async function manageFeatures(args: any): Promise<any> {
       features['include-cross-domain-documents'] = setState(args.enable_cross_domain_documents, features['include-cross-domain-documents']);
       features['disable-cross-domain-documents'] = setDisableState(args.enable_cross_domain_documents, features['disable-cross-domain-documents']);
     }
+    }
 
     const resPatch = await fetch(`${baseUrl}?updateMask=features`, {
       method: 'PATCH',
@@ -2006,6 +2065,101 @@ async function manageFeatures(args: any): Promise<any> {
   }
 
   throw new Error(`Unsupported action "${action}" for gemini_enterprise_manage_features.`);
+}
+
+// 10b. Model Availability Management
+async function manageModels(args: any): Promise<any> {
+  const { projectId, location, options } = getGcpParams(args);
+  const engineId = args.engine_id;
+  const baseUrl = `https://global-discoveryengine.googleapis.com/v1/projects/${projectId}/locations/${location}/collections/${config.collectionId}/engines/${engineId}`;
+  const action = args.action;
+
+  const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
+  const client = await auth.getClient();
+  const token = (await client.getAccessToken()).token;
+  const restHeaders = {
+    'Authorization': `Bearer ${token}`,
+    'X-Goog-User-Project': projectId,
+    'Content-Type': 'application/json'
+  };
+
+  const mapModelsToResponse = (m: Record<string, string>) => ({
+    enable_gemini_2_5_pro: m['gemini-2.5-pro'] === 'MODEL_ENABLED',
+    enable_gemini_3_1_pro: m['gemini-3.1-pro-preview'] === 'MODEL_ENABLED',
+    enable_gemini_3_5_flash: m['gemini-3-flash-preview'] === 'MODEL_ENABLED',
+    enable_gemini_3_6_flash: m['gemini-3.1-flash-image-preview'] === 'MODEL_ENABLED' || m['gemini-3.1-flash-image'] === 'MODEL_ENABLED'
+  });
+
+  if (action === 'get') {
+    const res = await fetch(baseUrl, { headers: restHeaders });
+    const data = await res.json();
+    const modelConfigs = data.modelConfigs || {};
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            status: 'SUCCESS',
+            engine_id: engineId,
+            model_availability: mapModelsToResponse(modelConfigs),
+            raw_model_configs: modelConfigs
+          }, null, 2)
+        }
+      ]
+    };
+  }
+
+  if (action === 'update') {
+    const resGet = await fetch(baseUrl, { headers: restHeaders });
+    const existing = await resGet.json();
+    const modelConfigs = existing.modelConfigs || {};
+
+    const setState = (val: boolean | undefined, current: string) => {
+      if (val === undefined) return current || 'MODEL_ENABLED';
+      return val ? 'MODEL_ENABLED' : 'MODEL_DISABLED';
+    };
+
+    if (args.enable_all_models === true) {
+      modelConfigs['gemini-2.5-pro'] = 'MODEL_ENABLED';
+      modelConfigs['gemini-3.1-pro-preview'] = 'MODEL_ENABLED';
+      modelConfigs['gemini-3-flash-preview'] = 'MODEL_ENABLED';
+      modelConfigs['gemini-3.1-flash-image-preview'] = 'MODEL_ENABLED';
+      modelConfigs['gemini-3.1-flash-image'] = 'MODEL_ENABLED';
+      modelConfigs['gemini-2.5-flash-image'] = 'MODEL_ENABLED';
+    } else {
+      if (args.enable_gemini_2_5_pro !== undefined) modelConfigs['gemini-2.5-pro'] = setState(args.enable_gemini_2_5_pro, modelConfigs['gemini-2.5-pro']);
+      if (args.enable_gemini_3_1_pro !== undefined) modelConfigs['gemini-3.1-pro-preview'] = setState(args.enable_gemini_3_1_pro, modelConfigs['gemini-3.1-pro-preview']);
+      if (args.enable_gemini_3_5_flash !== undefined) modelConfigs['gemini-3-flash-preview'] = setState(args.enable_gemini_3_5_flash, modelConfigs['gemini-3-flash-preview']);
+      if (args.enable_gemini_3_6_flash !== undefined) {
+        modelConfigs['gemini-3.1-flash-image-preview'] = setState(args.enable_gemini_3_6_flash, modelConfigs['gemini-3.1-flash-image-preview']);
+        modelConfigs['gemini-3.1-flash-image'] = setState(args.enable_gemini_3_6_flash, modelConfigs['gemini-3.1-flash-image']);
+      }
+    }
+
+    const resPatch = await fetch(`${baseUrl}?updateMask=modelConfigs`, {
+      method: 'PATCH',
+      headers: restHeaders,
+      body: JSON.stringify({ modelConfigs })
+    });
+    const updated = await resPatch.json();
+    const updatedModels = updated.modelConfigs || {};
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            status: 'SUCCESS',
+            message: `Model availability settings updated for app "${engineId}".`,
+            model_availability: mapModelsToResponse(updatedModels),
+            raw_model_configs: updatedModels
+          }, null, 2)
+        }
+      ]
+    };
+  }
+
+  throw new Error(`Unsupported action "${action}" for gemini_enterprise_manage_models.`);
 }
 
 // 11. Search UI Management
