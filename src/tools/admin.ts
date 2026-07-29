@@ -465,7 +465,8 @@ export const adminTools: any[] = [
         enable_multi_agent_orchestration: { type: 'boolean', description: 'Enable or disable Multi-Agent Orchestration.' },
         enable_single_agent_orchestration: { type: 'boolean', description: 'Enable or disable Single-Agent Orchestration.' },
         enable_bi_directional_audio: { type: 'boolean', description: 'Enable or disable Bi-directional Audio.' },
-        enable_cross_product_intelligence: { type: 'boolean', description: 'Enable or disable Cross-product Intelligence.' }
+        enable_cross_product_intelligence: { type: 'boolean', description: 'Enable or disable Cross-product Intelligence.' },
+        enable_cross_domain_documents: { type: 'boolean', description: 'Enable or disable Include cross-domain documents.' }
       },
       required: ['action', 'engine_id']
     }
@@ -1912,7 +1913,8 @@ async function manageFeatures(args: any): Promise<any> {
     enable_multi_agent_orchestration: f['disable-multi-agent-orchestration'] !== 'FEATURE_STATE_ON',
     enable_single_agent_orchestration: f['disable-single-agent-orchestration'] !== 'FEATURE_STATE_ON',
     enable_bi_directional_audio: f['bi-directional-audio'] === 'FEATURE_STATE_ON',
-    enable_cross_product_intelligence: f['cross-product-intelligence'] === 'FEATURE_STATE_ON'
+    enable_cross_product_intelligence: f['cross-product-intelligence'] === 'FEATURE_STATE_ON',
+    enable_cross_domain_documents: f['cross-domain-documents'] === 'FEATURE_STATE_ON' || f['include-cross-domain-documents'] === 'FEATURE_STATE_ON' || f['disable-cross-domain-documents'] === 'FEATURE_STATE_OFF'
   });
 
   if (action === 'get') {
@@ -1975,6 +1977,11 @@ async function manageFeatures(args: any): Promise<any> {
     if (args.enable_single_agent_orchestration !== undefined) features['disable-single-agent-orchestration'] = setDisableState(args.enable_single_agent_orchestration, features['disable-single-agent-orchestration']);
     if (args.enable_bi_directional_audio !== undefined) features['bi-directional-audio'] = setState(args.enable_bi_directional_audio, features['bi-directional-audio']);
     if (args.enable_cross_product_intelligence !== undefined) features['cross-product-intelligence'] = setState(args.enable_cross_product_intelligence, features['cross-product-intelligence']);
+    if (args.enable_cross_domain_documents !== undefined) {
+      features['cross-domain-documents'] = setState(args.enable_cross_domain_documents, features['cross-domain-documents']);
+      features['include-cross-domain-documents'] = setState(args.enable_cross_domain_documents, features['include-cross-domain-documents']);
+      features['disable-cross-domain-documents'] = setDisableState(args.enable_cross_domain_documents, features['disable-cross-domain-documents']);
+    }
 
     const resPatch = await fetch(`${baseUrl}?updateMask=features`, {
       method: 'PATCH',
