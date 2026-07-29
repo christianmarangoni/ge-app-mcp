@@ -2399,6 +2399,7 @@ async function manageObservability(args: any): Promise<any> {
 
   if (action === 'get') {
     const [engine] = await client.getEngine({ name: engineName });
+    const isAnalyticsDisabled = engine.disableAnalytics ?? false;
     return {
       content: [
         {
@@ -2406,9 +2407,21 @@ async function manageObservability(args: any): Promise<any> {
           text: JSON.stringify({
             status: 'SUCCESS',
             engine_id: engineId,
-            observability: {
-              disableAnalytics: engine.disableAnalytics ?? false
-            }
+            observability_options: {
+              user_interaction_logging: {
+                enabled: !isAnalyticsDisabled,
+                description: 'Log user interactions such as search queries and clicks (controlled by disable_analytics)'
+              },
+              audio_recording: {
+                enabled: false,
+                description: 'Record audio from bi-directional audio sessions'
+              },
+              log_session_history: {
+                enabled: true,
+                description: 'Save user chat sessions and history (Logging options checkbox)'
+              }
+            },
+            raw_disable_analytics: isAnalyticsDisabled
           }, null, 2)
         }
       ]
