@@ -2405,12 +2405,23 @@ async function manageObservability(args: any): Promise<any> {
   const engineName = `${parent}/engines/${engineId}`;
   const action = args.action;
 
+  const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
+  const authClient = await auth.getClient();
+  const token = (await authClient.getAccessToken()).token;
+  const baseUrl = `https://global-discoveryengine.googleapis.com/v1alpha/${engineName}`;
+  const headers = {
+    'Authorization': `Bearer ${token}`,
+    'X-Goog-User-Project': projectId,
+    'Content-Type': 'application/json'
+  };
+
   if (action === 'get') {
-    const [engine] = await client.getEngine({ name: engineName });
+    const resGet = await fetch(baseUrl, { headers });
+    const engine = await resGet.json();
     const isAnalyticsDisabled = engine.disableAnalytics ?? false;
-    const commonConfig = (engine as any).commonConfig || {};
-    const isOpenTelemetryEnabled = commonConfig.enableOpenTelemetry ?? true;
-    const isPromptLoggingEnabled = commonConfig.enablePromptLogging ?? true;
+    const obsConfig = engine.observabilityConfig || {};
+    const isOpenTelemetryEnabled = obsConfig.observabilityEnabled === true;
+    const isPromptLoggingEnabled = obsConfig.sensitiveLoggingEnabled === true;
     return {
       content: [
         {
@@ -2425,10 +2436,12 @@ async function manageObservability(args: any): Promise<any> {
               },
               opentelemetry_instrumentation: {
                 enabled: isOpenTelemetryEnabled,
+                backend_field: 'observabilityConfig.observabilityEnabled',
                 description: 'Enable instrumentation of OpenTelemetry traces and logs (populates agent observability dashboard and traces pages)'
               },
               prompt_inputs_response_outputs_logging: {
                 enabled: isPromptLoggingEnabled,
+                backend_field: 'observabilityConfig.sensitiveLoggingEnabled',
                 description: 'Enable the logging of prompt inputs and response outputs (collects and stores full content of user prompts and responses)'
               },
               audio_recording: {
@@ -2448,57 +2461,58 @@ async function manageObservability(args: any): Promise<any> {
   }
 
   if (action === 'update') {
-    const disableAnalytics = args.disable_analytics ?? false;
-    const enableOpenTelemetry = args.enable_opentelemetry ?? true;
-    const enablePromptLogging = args.enable_prompt_logging ?? true;
+    const resGet = await fetch(baseUrl, { headers });
+    const existing = await resGet.json();
+    const obsConfig = existing.observabilityConfig || {};
 
-    try {
-      const [existingEngine] = await client.getEngine({ name: engineName });
-      const commonConfig = (existingEngine as any).commonConfig || {};
-      commonConfig.enableOpenTelemetry = enableOpenTelemetry;
-      commonConfig.enablePromptLogging = enablePromptLogging;
-
-      const [updatedEngine] = await client.updateEngine({
-        engine: {
-          name: engineName,
-          disableAnalytics: disableAnalytics,
-          commonConfig
-        } as any,
-        updateMask: {
-          paths: ['disable_analytics', 'common_config']
-        }
-      });
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify({
-              status: 'SUCCESS',
-              message: `Observability analytics, OpenTelemetry instrumentation, and Prompt inputs/response outputs logging updated for app "${engineId}".`,
-              observability: {
-                user_interaction_logging: !updatedEngine.disableAnalytics,
-                opentelemetry_instrumentation: enableOpenTelemetry,
-                prompt_inputs_response_outputs_logging: enablePromptLogging
-              }
-            }, null, 2)
-          }
-        ]
-      };
-    } catch (err: any) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify({
-              status: 'INFO',
-              message: `Observability analytics configuration status for app "${engineId}". Note: GCP API enforces that disableAnalytics is set during engine creation and is immutable thereafter.`,
-              details: err.message || String(err)
-            }, null, 2)
-          }
-        ]
-      };
+    if (args.enable_opentelemetry !== undefined) {
+      obsConfig.observabilityEnabled = args.enable_opentelemetry;
     }
+    if (args.enable_prompt_logging !== undefined) {
+      obsConfig.sensitiveLoggingEnabled = args.enable_prompt_logging;
+    }
+
+    const resPatch = await fetch(`${baseUrl}?updateMask=observability_config`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ observabilityConfig: obsConfig })
+    });
+    const updatedEngine = await resPatch.json();
+
+    let disableAnalytics = existing.disableAnalytics ?? false;
+    if (args.disable_analytics !== undefined) {
+      try {
+        const [updatedClientEngine] = await client.updateEngine({
+          engine: {
+            name: engineName,
+            disableAnalytics: args.disable_analytics
+          },
+          updateMask: {
+            paths: ['disable_analytics']
+          }
+        });
+        disableAnalytics = updatedClientEngine.disableAnalytics;
+      } catch (e) {
+        // disableAnalytics is immutable after create
+      }
+    }
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            status: 'SUCCESS',
+            message: `Observability settings (OpenTelemetry instrumentation and Prompt inputs/response outputs logging) updated successfully for app "${engineId}".`,
+            observability: {
+              user_interaction_logging: !disableAnalytics,
+              opentelemetry_instrumentation: updatedEngine.observabilityConfig?.observabilityEnabled === true,
+              prompt_inputs_response_outputs_logging: updatedEngine.observabilityConfig?.sensitiveLoggingEnabled === true
+            }
+          }, null, 2)
+        }
+      ]
+    };
   }
 
   throw new Error(`Unsupported action "${action}" for gemini_enterprise_manage_observability.`);
