@@ -674,10 +674,22 @@ async function manageApps(args: any): Promise<any> {
     const datastoreIds = args.datastore_ids || [];
     const enginePayload: any = {
       displayName,
-      solutionType
+      solutionType,
+      industryVertical: args.industry_vertical || 'GENERIC'
     };
     if (datastoreIds.length > 0) {
       enginePayload.dataStoreIds = datastoreIds;
+    }
+    if (solutionType === 'SOLUTION_TYPE_SEARCH') {
+      enginePayload.appType = 'APP_TYPE_INTRANET';
+      enginePayload.knowledgeGraphConfig = {
+        enablePrivateKnowledgeGraph: true
+      };
+      enginePayload.searchEngineConfig = {
+        searchTier: 'SEARCH_TIER_ENTERPRISE',
+        searchAddOns: ['SEARCH_ADD_ON_LLM'],
+        requiredSubscriptionTier: 'SUBSCRIPTION_TIER_SEARCH_AND_ASSISTANT'
+      };
     }
 
     const [operation] = await client.createEngine({
