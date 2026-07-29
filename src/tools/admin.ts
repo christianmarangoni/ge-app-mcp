@@ -1848,18 +1848,27 @@ async function manageSkills(args: any): Promise<any> {
 
 // 10. Feature Management
 async function manageFeatures(args: any): Promise<any> {
-  const { projectId, location, options } = getGcpParams(args);
-  const client = new EngineServiceClient(options);
+  const { projectId, location } = getGcpParams(args);
   const parent = `projects/${projectId}/locations/${location}/collections/${config.collectionId}`;
   const engineId = args.engine_id;
   const engineName = `${parent}/engines/${engineId}`;
   const action = args.action;
 
+  const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
+  const authClient = await auth.getClient();
+  const token = (await authClient.getAccessToken()).token;
+  const restHeaders = {
+    'Authorization': `Bearer ${token}`,
+    'X-Goog-User-Project': projectId,
+    'Content-Type': 'application/json'
+  };
+  const baseUrl = `https://global-discoveryengine.googleapis.com/v1/${engineName}`;
+
   if (action === 'get') {
-    const [engine] = await client.getEngine({ name: engineName });
-    const commonConfig = (engine as any).commonConfig || {};
-    const searchEngineConfig = (engine as any).searchEngineConfig || {};
-    
+    const res = await fetch(baseUrl, { headers: restHeaders });
+    const data = await res.json();
+    const features = data.features || {};
+
     return {
       content: [
         {
@@ -1868,13 +1877,13 @@ async function manageFeatures(args: any): Promise<any> {
             status: 'SUCCESS',
             engine_id: engineId,
             features: {
-              enable_agent_gallery: commonConfig.enableAgentGallery ?? true,
-              enable_agent_designer: commonConfig.enableAgentDesigner ?? true,
-              enable_prompt_gallery: commonConfig.enablePromptGallery ?? true,
-              enable_model_selector: searchEngineConfig.modelSelector ?? true,
-              enable_notebook_lm: commonConfig.enableNotebookLm ?? true,
-              enable_session_sharing: commonConfig.enableSessionSharing ?? true,
-              enable_memory: commonConfig.enableMemory ?? true
+              enable_agent_gallery: features['agent-gallery'] === 'FEATURE_STATE_ON',
+              enable_agent_designer: features['no-code-agent-builder'] === 'FEATURE_STATE_ON',
+              enable_prompt_gallery: features['prompt-gallery'] === 'FEATURE_STATE_ON',
+              enable_model_selector: features['model-selector'] === 'FEATURE_STATE_ON',
+              enable_notebook_lm: features['notebook-lm'] === 'FEATURE_STATE_ON',
+              enable_session_sharing: features['session-sharing'] === 'FEATURE_STATE_ON',
+              enable_memory: features['personalization-memory'] === 'FEATURE_STATE_ON'
             }
           }, null, 2)
         }
@@ -1883,33 +1892,30 @@ async function manageFeatures(args: any): Promise<any> {
   }
 
   if (action === 'update') {
-    const [existingEngine] = await client.getEngine({ name: engineName });
-    const commonConfig = (existingEngine as any).commonConfig || {};
-    const searchEngineConfig = (existingEngine as any).searchEngineConfig || {};
+    const resGet = await fetch(baseUrl, { headers: restHeaders });
+    const existing = await resGet.json();
+    const features = existing.features || {};
 
-    if (args.enable_agent_gallery !== undefined) commonConfig.enableAgentGallery = args.enable_agent_gallery;
-    if (args.enable_agent_designer !== undefined) commonConfig.enableAgentDesigner = args.enable_agent_designer;
-    if (args.enable_prompt_gallery !== undefined) commonConfig.enablePromptGallery = args.enable_prompt_gallery;
-    if (args.enable_notebook_lm !== undefined) commonConfig.enableNotebookLm = args.enable_notebook_lm;
-    if (args.enable_session_sharing !== undefined) commonConfig.enableSessionSharing = args.enable_session_sharing;
-    if (args.enable_memory !== undefined) commonConfig.enableMemory = args.enable_memory;
-    if (args.enable_model_selector !== undefined) searchEngineConfig.modelSelector = args.enable_model_selector;
+    const setState = (val: boolean | undefined, current: string) => {
+      if (val === undefined) return current || 'FEATURE_STATE_ON';
+      return val ? 'FEATURE_STATE_ON' : 'FEATURE_STATE_OFF';
+    };
 
-    const updatePaths: string[] = ['common_config'];
-    if (args.enable_model_selector !== undefined) {
-      updatePaths.push('search_engine_config');
-    }
+    if (args.enable_agent_gallery !== undefined) features['agent-gallery'] = setState(args.enable_agent_gallery, features['agent-gallery']);
+    if (args.enable_agent_designer !== undefined) features['no-code-agent-builder'] = setState(args.enable_agent_designer, features['no-code-agent-builder']);
+    if (args.enable_prompt_gallery !== undefined) features['prompt-gallery'] = setState(args.enable_prompt_gallery, features['prompt-gallery']);
+    if (args.enable_model_selector !== undefined) features['model-selector'] = setState(args.enable_model_selector, features['model-selector']);
+    if (args.enable_notebook_lm !== undefined) features['notebook-lm'] = setState(args.enable_notebook_lm, features['notebook-lm']);
+    if (args.enable_session_sharing !== undefined) features['session-sharing'] = setState(args.enable_session_sharing, features['session-sharing']);
+    if (args.enable_memory !== undefined) features['personalization-memory'] = setState(args.enable_memory, features['personalization-memory']);
 
-    const [updatedEngine] = await client.updateEngine({
-      engine: {
-        name: engineName,
-        commonConfig,
-        searchEngineConfig
-      },
-      updateMask: {
-        paths: updatePaths
-      }
+    const resPatch = await fetch(`${baseUrl}?updateMask=features`, {
+      method: 'PATCH',
+      headers: restHeaders,
+      body: JSON.stringify({ features })
     });
+    const updated = await resPatch.json();
+    const updatedFeatures = updated.features || {};
 
     return {
       content: [
@@ -1918,7 +1924,15 @@ async function manageFeatures(args: any): Promise<any> {
           text: JSON.stringify({
             status: 'SUCCESS',
             message: `Feature management settings updated for app "${engineId}".`,
-            app: updatedEngine
+            features: {
+              enable_agent_gallery: updatedFeatures['agent-gallery'] === 'FEATURE_STATE_ON',
+              enable_agent_designer: updatedFeatures['no-code-agent-builder'] === 'FEATURE_STATE_ON',
+              enable_prompt_gallery: updatedFeatures['prompt-gallery'] === 'FEATURE_STATE_ON',
+              enable_model_selector: updatedFeatures['model-selector'] === 'FEATURE_STATE_ON',
+              enable_notebook_lm: updatedFeatures['notebook-lm'] === 'FEATURE_STATE_ON',
+              enable_session_sharing: updatedFeatures['session-sharing'] === 'FEATURE_STATE_ON',
+              enable_memory: updatedFeatures['personalization-memory'] === 'FEATURE_STATE_ON'
+            }
           }, null, 2)
         }
       ]
