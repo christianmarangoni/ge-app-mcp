@@ -604,6 +604,14 @@ export const adminTools: any[] = [
         disable_analytics: {
           type: 'boolean',
           description: 'Set to true to disable analytics tracking, or false to enable.'
+        },
+        enable_opentelemetry: {
+          type: 'boolean',
+          description: 'Enable instrumentation of OpenTelemetry traces and logs.'
+        },
+        enable_prompt_logging: {
+          type: 'boolean',
+          description: 'Enable the logging of prompt inputs and response outputs.'
         }
       },
       required: ['action', 'engine_id']
@@ -2400,6 +2408,9 @@ async function manageObservability(args: any): Promise<any> {
   if (action === 'get') {
     const [engine] = await client.getEngine({ name: engineName });
     const isAnalyticsDisabled = engine.disableAnalytics ?? false;
+    const commonConfig = (engine as any).commonConfig || {};
+    const isOpenTelemetryEnabled = commonConfig.enableOpenTelemetry ?? true;
+    const isPromptLoggingEnabled = commonConfig.enablePromptLogging ?? true;
     return {
       content: [
         {
@@ -2411,6 +2422,14 @@ async function manageObservability(args: any): Promise<any> {
               user_interaction_logging: {
                 enabled: !isAnalyticsDisabled,
                 description: 'Log user interactions such as search queries and clicks (controlled by disable_analytics)'
+              },
+              opentelemetry_instrumentation: {
+                enabled: isOpenTelemetryEnabled,
+                description: 'Enable instrumentation of OpenTelemetry traces and logs (populates agent observability dashboard and traces pages)'
+              },
+              prompt_inputs_response_outputs_logging: {
+                enabled: isPromptLoggingEnabled,
+                description: 'Enable the logging of prompt inputs and response outputs (collects and stores full content of user prompts and responses)'
               },
               audio_recording: {
                 enabled: false,
@@ -2429,18 +2448,24 @@ async function manageObservability(args: any): Promise<any> {
   }
 
   if (action === 'update') {
-    if (args.disable_analytics === undefined) {
-      throw new Error('disable_analytics (boolean) is required for update action.');
-    }
+    const disableAnalytics = args.disable_analytics ?? false;
+    const enableOpenTelemetry = args.enable_opentelemetry ?? true;
+    const enablePromptLogging = args.enable_prompt_logging ?? true;
 
     try {
+      const [existingEngine] = await client.getEngine({ name: engineName });
+      const commonConfig = (existingEngine as any).commonConfig || {};
+      commonConfig.enableOpenTelemetry = enableOpenTelemetry;
+      commonConfig.enablePromptLogging = enablePromptLogging;
+
       const [updatedEngine] = await client.updateEngine({
         engine: {
           name: engineName,
-          disableAnalytics: args.disable_analytics
-        },
+          disableAnalytics: disableAnalytics,
+          commonConfig
+        } as any,
         updateMask: {
-          paths: ['disable_analytics']
+          paths: ['disable_analytics', 'common_config']
         }
       });
 
@@ -2450,8 +2475,12 @@ async function manageObservability(args: any): Promise<any> {
             type: 'text',
             text: JSON.stringify({
               status: 'SUCCESS',
-              message: `Observability analytics status updated for app "${engineId}".`,
-              disableAnalytics: updatedEngine.disableAnalytics
+              message: `Observability analytics, OpenTelemetry instrumentation, and Prompt inputs/response outputs logging updated for app "${engineId}".`,
+              observability: {
+                user_interaction_logging: !updatedEngine.disableAnalytics,
+                opentelemetry_instrumentation: enableOpenTelemetry,
+                prompt_inputs_response_outputs_logging: enablePromptLogging
+              }
             }, null, 2)
           }
         ]

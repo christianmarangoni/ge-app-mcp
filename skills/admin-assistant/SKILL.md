@@ -43,7 +43,7 @@ To manage Web App feature toggles, Search UI elements, Assistant prompt chips, o
 *   **Model Availability**: Use `gemini_enterprise_manage_models` to get or update Gemini Model Availability toggles (`enable_gemini_2_5_pro`, `enable_gemini_3_1_pro`, `enable_gemini_3_5_flash`, `enable_gemini_3_6_flash`, or use `enable_all_models` / `disable_all_models` to activate or deactivate all models at once).
 *   **Search UI & Shortcuts**: Use `gemini_enterprise_manage_search_ui` to manage autocomplete suggestions, user feedback rating widgets, or create pinned link shortcuts.
 *   **Assistant Instructions & Prompt Chips**: Use `gemini_enterprise_manage_assistant` to configure prompt chips and system instructions for the assistant.
-*   **Observability**: Use `gemini_enterprise_manage_observability` to inspect or toggle query analytics tracking (`disable_analytics`).
+*   **Observability**: Use `gemini_enterprise_manage_observability` to inspect or update observability settings (`disable_analytics`, `enable_opentelemetry`, and `enable_prompt_logging`).
 
 ### 7. Prerequisites & Security Scopes
 Admin, licensing, and IAM capabilities are subject to strict access controls:
