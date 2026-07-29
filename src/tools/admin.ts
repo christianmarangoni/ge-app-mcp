@@ -4,7 +4,8 @@ import {
   DocumentServiceClient,
   SchemaServiceClient,
   ControlServiceClient,
-  SiteSearchEngineServiceClient
+  SiteSearchEngineServiceClient,
+  ServingConfigServiceClient
 } from '@google-cloud/discoveryengine';
 import { GoogleAuth } from 'google-auth-library';
 import { config } from '../config.js';
@@ -13,14 +14,14 @@ import { config } from '../config.js';
 export const adminTools: any[] = [
   {
     name: 'gemini_enterprise_manage_apps',
-    description: 'Manage Gemini Enterprise search and chat apps (engines). Supports create, list, delete, update, get-iam, and set-iam operations.',
+    description: 'Manage Gemini Enterprise search and chat apps (engines). Supports create, list, delete, update, get, get-iam, and set-iam operations.',
     inputSchema: {
       type: 'object',
       properties: {
         action: {
           type: 'string',
-          enum: ['create', 'list', 'delete', 'update', 'get-iam', 'set-iam'],
-          description: 'The action to perform: create, list, delete, update, get-iam, or set-iam.'
+          enum: ['create', 'list', 'delete', 'update', 'get', 'get-iam', 'set-iam'],
+          description: 'The action to perform: create, list, delete, update, get, get-iam, or set-iam.'
         },
         project_id: {
           type: 'string',
@@ -391,6 +392,172 @@ export const adminTools: any[] = [
       },
       required: ['action']
     }
+  },
+  {
+    name: 'gemini_enterprise_manage_features',
+    description: 'Manage Gemini Enterprise feature toggles (Agent Gallery, Agent Designer, Prompt Gallery, Model Selector, NotebookLM, Session Sharing, Memory). Supports get and update operations.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['get', 'update'],
+          description: 'The action to perform: get or update feature management settings.'
+        },
+        project_id: {
+          type: 'string',
+          description: 'Optional. Google Cloud Project ID.'
+        },
+        location: {
+          type: 'string',
+          description: 'Optional. Google Cloud Region.'
+        },
+        engine_id: {
+          type: 'string',
+          description: 'ID of the app/engine. Required.'
+        },
+        enable_agent_gallery: {
+          type: 'boolean',
+          description: 'Enable or disable the Agent Gallery feature.'
+        },
+        enable_agent_designer: {
+          type: 'boolean',
+          description: 'Enable or disable the Agent Designer feature.'
+        },
+        enable_prompt_gallery: {
+          type: 'boolean',
+          description: 'Enable or disable the Prompt Gallery feature.'
+        },
+        enable_model_selector: {
+          type: 'boolean',
+          description: 'Enable or disable the Model Selector feature.'
+        },
+        enable_notebook_lm: {
+          type: 'boolean',
+          description: 'Enable or disable NotebookLM integration.'
+        },
+        enable_session_sharing: {
+          type: 'boolean',
+          description: 'Enable or disable Session Sharing.'
+        },
+        enable_memory: {
+          type: 'boolean',
+          description: 'Enable or disable long-term Memory & Personalization.'
+        }
+      },
+      required: ['action', 'engine_id']
+    }
+  },
+  {
+    name: 'gemini_enterprise_manage_search_ui',
+    description: 'Manage Gemini Enterprise Search UI configurations, autocomplete suggestions, user feedback settings, and pinned links (shortcuts).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['get', 'update_autocomplete', 'update_feedback', 'manage_pinned_link'],
+          description: 'The action to perform: get, update_autocomplete, update_feedback, or manage_pinned_link.'
+        },
+        project_id: {
+          type: 'string',
+          description: 'Optional. Google Cloud Project ID.'
+        },
+        location: {
+          type: 'string',
+          description: 'Optional. Google Cloud Region.'
+        },
+        engine_id: {
+          type: 'string',
+          description: 'ID of the app/engine. Required.'
+        },
+        enable_autocomplete: {
+          type: 'boolean',
+          description: 'Enable or disable autocomplete suggestions.'
+        },
+        enable_user_feedback: {
+          type: 'boolean',
+          description: 'Enable or disable user feedback rating widget.'
+        },
+        pinned_link: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', description: 'Title or link text for the shortcut link.' },
+            uri: { type: 'string', description: 'Target URL for the shortcut link (e.g. https://www.lepida.net/).' },
+            link_id: { type: 'string', description: 'Optional unique ID for the shortcut link control.' }
+          },
+          required: ['title', 'uri']
+        }
+      },
+      required: ['action', 'engine_id']
+    }
+  },
+  {
+    name: 'gemini_enterprise_manage_assistant',
+    description: 'Manage Gemini Enterprise Assistant configurations, system instructions, and prompt chips.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['get', 'update_prompt_chips', 'update_system_instruction'],
+          description: 'The action to perform: get, update_prompt_chips, or update_system_instruction.'
+        },
+        project_id: {
+          type: 'string',
+          description: 'Optional. Google Cloud Project ID.'
+        },
+        location: {
+          type: 'string',
+          description: 'Optional. Google Cloud Region.'
+        },
+        engine_id: {
+          type: 'string',
+          description: 'ID of the app/engine. Required.'
+        },
+        prompt_chips: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'List of prompt chip text suggestions for the assistant UI.'
+        },
+        system_instruction: {
+          type: 'string',
+          description: 'System instruction prompt for the assistant AI model.'
+        }
+      },
+      required: ['action', 'engine_id']
+    }
+  },
+  {
+    name: 'gemini_enterprise_manage_observability',
+    description: 'Manage Observability, analytics tracking, and query logging configurations for Gemini Enterprise applications.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['get', 'update'],
+          description: 'The action to perform: get or update observability settings.'
+        },
+        project_id: {
+          type: 'string',
+          description: 'Optional. Google Cloud Project ID.'
+        },
+        location: {
+          type: 'string',
+          description: 'Optional. Google Cloud Region.'
+        },
+        engine_id: {
+          type: 'string',
+          description: 'ID of the app/engine. Required.'
+        },
+        disable_analytics: {
+          type: 'boolean',
+          description: 'Set to true to disable analytics tracking, or false to enable.'
+        }
+      },
+      required: ['action', 'engine_id']
+    }
   }
 ];
 
@@ -431,6 +598,14 @@ export async function handleAdminToolCall(name: string, args: any): Promise<any>
       return await manageAgents(args);
     case 'gemini_enterprise_manage_skills':
       return await manageSkills(args);
+    case 'gemini_enterprise_manage_features':
+      return await manageFeatures(args);
+    case 'gemini_enterprise_manage_search_ui':
+      return await manageSearchUi(args);
+    case 'gemini_enterprise_manage_assistant':
+      return await manageAssistant(args);
+    case 'gemini_enterprise_manage_observability':
+      return await manageObservability(args);
     default:
       throw new Error(`Unknown admin tool: ${name}`);
   }
@@ -469,10 +644,26 @@ async function manageApps(args: any): Promise<any> {
 
   const engineId = args.engine_id;
   if (!engineId) {
-    throw new Error('engine_id is required for create, delete, update, get-iam, and set-iam actions.');
+    throw new Error('engine_id is required for create, delete, update, get, get-iam, and set-iam actions.');
   }
 
   const engineName = `${parent}/engines/${engineId}`;
+
+  if (action === 'get') {
+    const [engine] = await client.getEngine({ name: engineName });
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            status: 'SUCCESS',
+            message: `Successfully retrieved app "${engineId}".`,
+            app: engine
+          }, null, 2)
+        }
+      ]
+    };
+  }
 
   if (action === 'create') {
     const displayName = args.display_name;
@@ -1636,3 +1827,321 @@ async function manageSkills(args: any): Promise<any> {
       throw new Error(`Unsupported action "${action}" for Skills.`);
   }
 }
+
+// 10. Feature Management
+async function manageFeatures(args: any): Promise<any> {
+  const { projectId, location, options } = getGcpParams(args);
+  const client = new EngineServiceClient(options);
+  const parent = `projects/${projectId}/locations/${location}/collections/${config.collectionId}`;
+  const engineId = args.engine_id;
+  const engineName = `${parent}/engines/${engineId}`;
+  const action = args.action;
+
+  if (action === 'get') {
+    const [engine] = await client.getEngine({ name: engineName });
+    const commonConfig = (engine as any).commonConfig || {};
+    const searchEngineConfig = (engine as any).searchEngineConfig || {};
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            status: 'SUCCESS',
+            engine_id: engineId,
+            features: {
+              enable_agent_gallery: commonConfig.enableAgentGallery ?? true,
+              enable_agent_designer: commonConfig.enableAgentDesigner ?? true,
+              enable_prompt_gallery: commonConfig.enablePromptGallery ?? true,
+              enable_model_selector: searchEngineConfig.modelSelector ?? true,
+              enable_notebook_lm: commonConfig.enableNotebookLm ?? true,
+              enable_session_sharing: commonConfig.enableSessionSharing ?? true,
+              enable_memory: commonConfig.enableMemory ?? true
+            }
+          }, null, 2)
+        }
+      ]
+    };
+  }
+
+  if (action === 'update') {
+    const [existingEngine] = await client.getEngine({ name: engineName });
+    const commonConfig = (existingEngine as any).commonConfig || {};
+    const searchEngineConfig = (existingEngine as any).searchEngineConfig || {};
+
+    if (args.enable_agent_gallery !== undefined) commonConfig.enableAgentGallery = args.enable_agent_gallery;
+    if (args.enable_agent_designer !== undefined) commonConfig.enableAgentDesigner = args.enable_agent_designer;
+    if (args.enable_prompt_gallery !== undefined) commonConfig.enablePromptGallery = args.enable_prompt_gallery;
+    if (args.enable_notebook_lm !== undefined) commonConfig.enableNotebookLm = args.enable_notebook_lm;
+    if (args.enable_session_sharing !== undefined) commonConfig.enableSessionSharing = args.enable_session_sharing;
+    if (args.enable_memory !== undefined) commonConfig.enableMemory = args.enable_memory;
+    if (args.enable_model_selector !== undefined) searchEngineConfig.modelSelector = args.enable_model_selector;
+
+    const [updatedEngine] = await client.updateEngine({
+      engine: {
+        name: engineName,
+        commonConfig,
+        searchEngineConfig
+      },
+      updateMask: {
+        paths: ['common_config', 'search_engine_config']
+      }
+    });
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            status: 'SUCCESS',
+            message: `Feature management settings updated for app "${engineId}".`,
+            app: updatedEngine
+          }, null, 2)
+        }
+      ]
+    };
+  }
+
+  throw new Error(`Unsupported action "${action}" for gemini_enterprise_manage_features.`);
+}
+
+// 11. Search UI Management
+async function manageSearchUi(args: any): Promise<any> {
+  const { projectId, location, options } = getGcpParams(args);
+  const engineId = args.engine_id;
+  const parent = `projects/${projectId}/locations/${location}/collections/${config.collectionId}/engines/${engineId}`;
+  const action = args.action;
+
+  const controlClient = new ControlServiceClient(options);
+
+  if (action === 'get') {
+    const [controls] = await controlClient.listControls({ parent });
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            status: 'SUCCESS',
+            engine_id: engineId,
+            controls_count: controls.length,
+            controls: controls.map((c: any) => ({
+              name: c.name,
+              displayName: c.displayName,
+              solutionType: c.solutionType,
+              actionType: c.actionType,
+              redirectAction: c.redirectAction
+            }))
+          }, null, 2)
+        }
+      ]
+    };
+  }
+
+  if (action === 'manage_pinned_link') {
+    const pinned = args.pinned_link;
+    if (!pinned || !pinned.title || !pinned.uri) {
+      throw new Error('pinned_link object with title and uri is required.');
+    }
+    const controlId = pinned.link_id || `pinned-${Date.now()}`;
+    const queryTerm = (pinned.query || pinned.title).toLowerCase();
+    const [createdControl] = (await controlClient.createControl({
+      parent,
+      controlId,
+      control: {
+        displayName: pinned.title,
+        solutionType: 'SOLUTION_TYPE_SEARCH' as any,
+        useCases: ['SEARCH_USE_CASE_SEARCH' as any],
+        conditions: [
+          {
+            queryTerms: [
+              {
+                value: queryTerm,
+                fullMatch: true
+              } as any
+            ]
+          }
+        ],
+        redirectAction: {
+          redirectUri: pinned.uri
+        }
+      }
+    })) as any;
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            status: 'SUCCESS',
+            message: `Pinned link shortcut "${pinned.title}" created successfully.`,
+            control: createdControl
+          }, null, 2)
+        }
+      ]
+    };
+  }
+
+  if (action === 'update_autocomplete' || action === 'update_feedback') {
+    const client = new EngineServiceClient(options);
+    const [existingEngine] = await client.getEngine({ name: parent });
+    const commonConfig = (existingEngine as any).commonConfig || {};
+
+    if (action === 'update_autocomplete' && args.enable_autocomplete !== undefined) {
+      commonConfig.enableAutoComplete = args.enable_autocomplete;
+    }
+    if (action === 'update_feedback' && args.enable_user_feedback !== undefined) {
+      commonConfig.enableUserFeedback = args.enable_user_feedback;
+    }
+
+    const [updatedEngine] = await client.updateEngine({
+      engine: {
+        name: parent,
+        commonConfig
+      },
+      updateMask: {
+        paths: ['common_config']
+      }
+    });
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            status: 'SUCCESS',
+            message: `Search UI settings updated for app "${engineId}".`,
+            app: updatedEngine
+          }, null, 2)
+        }
+      ]
+    };
+  }
+
+  throw new Error(`Unsupported action "${action}" for gemini_enterprise_manage_search_ui.`);
+}
+
+// 12. Assistant & Prompts Management
+async function manageAssistant(args: any): Promise<any> {
+  const { projectId, location, options } = getGcpParams(args);
+  const client = new EngineServiceClient(options);
+  const parent = `projects/${projectId}/locations/${location}/collections/${config.collectionId}`;
+  const engineId = args.engine_id;
+  const engineName = `${parent}/engines/${engineId}`;
+  const action = args.action;
+
+  if (action === 'get') {
+    const [engine] = await client.getEngine({ name: engineName });
+    const chatEngineConfig = (engine as any).chatEngineConfig || {};
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            status: 'SUCCESS',
+            engine_id: engineId,
+            assistant_config: chatEngineConfig
+          }, null, 2)
+        }
+      ]
+    };
+  }
+
+  if (action === 'update_prompt_chips' || action === 'update_system_instruction') {
+    const [existingEngine] = await client.getEngine({ name: engineName });
+    const chatEngineConfig = (existingEngine as any).chatEngineConfig || {};
+
+    if (args.prompt_chips !== undefined) {
+      chatEngineConfig.promptChips = args.prompt_chips;
+    }
+    if (args.system_instruction !== undefined) {
+      chatEngineConfig.systemInstruction = {
+        script: args.system_instruction
+      };
+    }
+
+    const [updatedEngine] = await client.updateEngine({
+      engine: {
+        name: engineName,
+        chatEngineConfig
+      },
+      updateMask: {
+        paths: ['chat_engine_config']
+      }
+    });
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            status: 'SUCCESS',
+            message: `Assistant settings updated for app "${engineId}".`,
+            app: updatedEngine
+          }, null, 2)
+        }
+      ]
+    };
+  }
+
+  throw new Error(`Unsupported action "${action}" for gemini_enterprise_manage_assistant.`);
+}
+
+// 13. Observability & Logging Management
+async function manageObservability(args: any): Promise<any> {
+  const { projectId, location, options } = getGcpParams(args);
+  const client = new EngineServiceClient(options);
+  const parent = `projects/${projectId}/locations/${location}/collections/${config.collectionId}`;
+  const engineId = args.engine_id;
+  const engineName = `${parent}/engines/${engineId}`;
+  const action = args.action;
+
+  if (action === 'get') {
+    const [engine] = await client.getEngine({ name: engineName });
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            status: 'SUCCESS',
+            engine_id: engineId,
+            observability: {
+              disableAnalytics: engine.disableAnalytics ?? false
+            }
+          }, null, 2)
+        }
+      ]
+    };
+  }
+
+  if (action === 'update') {
+    if (args.disable_analytics === undefined) {
+      throw new Error('disable_analytics (boolean) is required for update action.');
+    }
+
+    const [updatedEngine] = await client.updateEngine({
+      engine: {
+        name: engineName,
+        disableAnalytics: args.disable_analytics
+      },
+      updateMask: {
+        paths: ['disable_analytics']
+      }
+    });
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            status: 'SUCCESS',
+            message: `Observability analytics status updated for app "${engineId}".`,
+            disableAnalytics: updatedEngine.disableAnalytics
+          }, null, 2)
+        }
+      ]
+    };
+  }
+
+  throw new Error(`Unsupported action "${action}" for gemini_enterprise_manage_observability.`);
+}
+

@@ -37,7 +37,14 @@ To retrieve or configure IAM policies on specific applications (engines):
 1.  **Retrieve IAM Policy**: Call `gemini_enterprise_manage_apps` with `action: "get-iam"` and the target `engine_id`. This returns the policy bindings along with its current `etag`.
 2.  **Set/Update IAM Policy**: Call `gemini_enterprise_manage_apps` with `action: "set-iam"`, providing the `engine_id` and the new `policy` object. To prevent concurrent overwrite conflicts, ensure the policy includes the latest `etag` returned by `get-iam`.
 
-### 6. Prerequisites & Security Scopes
+### 6. Extended Application Configurations & Tuning
+To manage Web App feature toggles, Search UI elements, Assistant prompt chips, or Observability:
+*   **Feature Management**: Use `gemini_enterprise_manage_features` to get or update end-user Web App capabilities (`enable_agent_gallery`, `enable_agent_designer`, `enable_prompt_gallery`, `enable_model_selector`, `enable_notebook_lm`, `enable_session_sharing`, `enable_memory`).
+*   **Search UI & Shortcuts**: Use `gemini_enterprise_manage_search_ui` to manage autocomplete suggestions, user feedback rating widgets, or create pinned link shortcuts.
+*   **Assistant Instructions & Prompt Chips**: Use `gemini_enterprise_manage_assistant` to configure prompt chips and system instructions for the assistant.
+*   **Observability**: Use `gemini_enterprise_manage_observability` to inspect or toggle query analytics tracking (`disable_analytics`).
+
+### 7. Prerequisites & Security Scopes
 Admin, licensing, and IAM capabilities are subject to strict access controls:
 *   **Required Scopes**: Administrative and IAM tools (e.g., app creation, IAM updates) require the `admin` scope. Licensing tools require the `billing` scope.
 *   **Enforcement**: If you try to run any of these tools and receive an "Access Denied" error, explain to the user that the MCP server must be re-initialized with the correct `MCP_SCOPES` (e.g. `MCP_SCOPES=admin,billing`).

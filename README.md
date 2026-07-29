@@ -32,6 +32,10 @@ The server provides complete (100% operational coverage) mapping to the core gRP
 *   **Bulk Document Ingestion (`gemini_enterprise_manage_documents`)**: Asynchronous ingestion and purging of documents from Cloud Storage (`gs://...`) or BigQuery sources.
 *   **Custom Schema Management (`gemini_enterprise_manage_schema`)**: Upload, modification, and retrieval of JSON schemas for indexing structured documents.
 *   **Tuning & Controls (`gemini_enterprise_manage_controls`)**: Creation of boost/bury rules, synonyms, redirects, and filters on Serving Configs.
+*   **Feature Management (`gemini_enterprise_manage_features`)**: Programmatic toggling of end-user Web App capabilities (Agent Gallery, Agent Designer, Prompt Gallery, Model Selector, NotebookLM, Session Sharing, Memory).
+*   **Search UI & Shortcuts (`gemini_enterprise_manage_search_ui`)**: Management of autocomplete suggestions, user feedback rating widgets, and pinned link shortcuts.
+*   **Assistant & Prompts (`gemini_enterprise_manage_assistant`)**: Configuration of prompt chips and custom system instructions for the assistant.
+*   **Observability & Analytics (`gemini_enterprise_manage_observability`)**: Query analytics tracking toggle and observability management.
 *   **SaaS Connectors (`gemini_enterprise_configure_connector`)**: High-fidelity simulated flow with synchronization state management for Jira, Salesforce, and Confluence.
 *   **Agent Management (`gemini_enterprise_manage_agents`)**: End-to-end CRUD operations (create, list, delete, update) for native, server-side Gemini Enterprise Agents.
 *   **License & Billing Management (`gemini_enterprise_manage_licenses`)**: Programmatic management of user seats on Gemini Enterprise / Gemini Code Assist license pools.
