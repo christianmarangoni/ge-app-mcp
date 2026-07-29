@@ -443,6 +443,10 @@ export const adminTools: any[] = [
         enable_memory: {
           type: 'boolean',
           description: 'Enable or disable long-term Memory & Personalization.'
+        },
+        enable_canvas: {
+          type: 'boolean',
+          description: 'Enable or disable the Canvas feature.'
         }
       },
       required: ['action', 'engine_id']
@@ -1883,7 +1887,8 @@ async function manageFeatures(args: any): Promise<any> {
               enable_model_selector: features['model-selector'] === 'FEATURE_STATE_ON',
               enable_notebook_lm: features['notebook-lm'] === 'FEATURE_STATE_ON',
               enable_session_sharing: features['session-sharing'] === 'FEATURE_STATE_ON',
-              enable_memory: features['personalization-memory'] === 'FEATURE_STATE_ON'
+              enable_memory: features['personalization-memory'] === 'FEATURE_STATE_ON',
+              enable_canvas: features['disable-canvas'] !== 'FEATURE_STATE_ON'
             }
           }, null, 2)
         }
@@ -1901,6 +1906,11 @@ async function manageFeatures(args: any): Promise<any> {
       return val ? 'FEATURE_STATE_ON' : 'FEATURE_STATE_OFF';
     };
 
+    const setDisableState = (val: boolean | undefined, current: string) => {
+      if (val === undefined) return current || 'FEATURE_STATE_OFF';
+      return val ? 'FEATURE_STATE_OFF' : 'FEATURE_STATE_ON';
+    };
+
     if (args.enable_agent_gallery !== undefined) features['agent-gallery'] = setState(args.enable_agent_gallery, features['agent-gallery']);
     if (args.enable_agent_designer !== undefined) features['no-code-agent-builder'] = setState(args.enable_agent_designer, features['no-code-agent-builder']);
     if (args.enable_prompt_gallery !== undefined) features['prompt-gallery'] = setState(args.enable_prompt_gallery, features['prompt-gallery']);
@@ -1908,6 +1918,7 @@ async function manageFeatures(args: any): Promise<any> {
     if (args.enable_notebook_lm !== undefined) features['notebook-lm'] = setState(args.enable_notebook_lm, features['notebook-lm']);
     if (args.enable_session_sharing !== undefined) features['session-sharing'] = setState(args.enable_session_sharing, features['session-sharing']);
     if (args.enable_memory !== undefined) features['personalization-memory'] = setState(args.enable_memory, features['personalization-memory']);
+    if (args.enable_canvas !== undefined) features['disable-canvas'] = setDisableState(args.enable_canvas, features['disable-canvas']);
 
     const resPatch = await fetch(`${baseUrl}?updateMask=features`, {
       method: 'PATCH',
@@ -1931,7 +1942,8 @@ async function manageFeatures(args: any): Promise<any> {
               enable_model_selector: updatedFeatures['model-selector'] === 'FEATURE_STATE_ON',
               enable_notebook_lm: updatedFeatures['notebook-lm'] === 'FEATURE_STATE_ON',
               enable_session_sharing: updatedFeatures['session-sharing'] === 'FEATURE_STATE_ON',
-              enable_memory: updatedFeatures['personalization-memory'] === 'FEATURE_STATE_ON'
+              enable_memory: updatedFeatures['personalization-memory'] === 'FEATURE_STATE_ON',
+              enable_canvas: updatedFeatures['disable-canvas'] !== 'FEATURE_STATE_ON'
             }
           }, null, 2)
         }
