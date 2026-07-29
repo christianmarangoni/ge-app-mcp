@@ -2005,9 +2005,7 @@ async function manageFeatures(args: any): Promise<any> {
       features['disable-single-agent-orchestration'] = 'FEATURE_STATE_OFF';
       features['bi-directional-audio'] = 'FEATURE_STATE_ON';
       features['cross-product-intelligence'] = 'FEATURE_STATE_ON';
-      features['cross-domain-documents'] = 'FEATURE_STATE_ON';
       features['include-cross-domain-documents'] = 'FEATURE_STATE_ON';
-      features['disable-cross-domain-documents'] = 'FEATURE_STATE_OFF';
     } else {
       if (args.enable_agent_gallery !== undefined) features['agent-gallery'] = setState(args.enable_agent_gallery, features['agent-gallery']);
       if (args.enable_agent_designer !== undefined) features['no-code-agent-builder'] = setState(args.enable_agent_designer, features['no-code-agent-builder']);
@@ -2036,9 +2034,9 @@ async function manageFeatures(args: any): Promise<any> {
     if (args.enable_bi_directional_audio !== undefined) features['bi-directional-audio'] = setState(args.enable_bi_directional_audio, features['bi-directional-audio']);
     if (args.enable_cross_product_intelligence !== undefined) features['cross-product-intelligence'] = setState(args.enable_cross_product_intelligence, features['cross-product-intelligence']);
     if (args.enable_cross_domain_documents !== undefined) {
-      features['cross-domain-documents'] = setState(args.enable_cross_domain_documents, features['cross-domain-documents']);
+      delete features['cross-domain-documents'];
+      delete features['disable-cross-domain-documents'];
       features['include-cross-domain-documents'] = setState(args.enable_cross_domain_documents, features['include-cross-domain-documents']);
-      features['disable-cross-domain-documents'] = setDisableState(args.enable_cross_domain_documents, features['disable-cross-domain-documents']);
     }
     }
 
