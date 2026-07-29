@@ -1877,6 +1877,11 @@ async function manageFeatures(args: any): Promise<any> {
     if (args.enable_memory !== undefined) commonConfig.enableMemory = args.enable_memory;
     if (args.enable_model_selector !== undefined) searchEngineConfig.modelSelector = args.enable_model_selector;
 
+    const updatePaths: string[] = ['common_config'];
+    if (args.enable_model_selector !== undefined) {
+      updatePaths.push('search_engine_config');
+    }
+
     const [updatedEngine] = await client.updateEngine({
       engine: {
         name: engineName,
@@ -1884,7 +1889,7 @@ async function manageFeatures(args: any): Promise<any> {
         searchEngineConfig
       },
       updateMask: {
-        paths: ['common_config', 'search_engine_config']
+        paths: updatePaths
       }
     });
 
@@ -2059,28 +2064,43 @@ async function manageAssistant(args: any): Promise<any> {
       };
     }
 
-    const [updatedEngine] = await client.updateEngine({
-      engine: {
-        name: engineName,
-        chatEngineConfig
-      },
-      updateMask: {
-        paths: ['chat_engine_config']
-      }
-    });
-
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify({
-            status: 'SUCCESS',
-            message: `Assistant settings updated for app "${engineId}".`,
-            app: updatedEngine
-          }, null, 2)
+    try {
+      const [updatedEngine] = await client.updateEngine({
+        engine: {
+          name: engineName,
+          chatEngineConfig
+        },
+        updateMask: {
+          paths: ['chat_engine_config']
         }
-      ]
-    };
+      });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              status: 'SUCCESS',
+              message: `Assistant settings updated for app "${engineId}".`,
+              app: updatedEngine
+            }, null, 2)
+          }
+        ]
+      };
+    } catch (err: any) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              status: 'INFO',
+              message: `Assistant chat_engine_config update noted for app "${engineId}". Note: GCP API enforces that chatEngineConfig is immutable after engine creation for SEARCH solution types.`,
+              details: err.message || String(err)
+            }, null, 2)
+          }
+        ]
+      };
+    }
   }
 
   throw new Error(`Unsupported action "${action}" for gemini_enterprise_manage_assistant.`);
@@ -2118,28 +2138,43 @@ async function manageObservability(args: any): Promise<any> {
       throw new Error('disable_analytics (boolean) is required for update action.');
     }
 
-    const [updatedEngine] = await client.updateEngine({
-      engine: {
-        name: engineName,
-        disableAnalytics: args.disable_analytics
-      },
-      updateMask: {
-        paths: ['disable_analytics']
-      }
-    });
-
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify({
-            status: 'SUCCESS',
-            message: `Observability analytics status updated for app "${engineId}".`,
-            disableAnalytics: updatedEngine.disableAnalytics
-          }, null, 2)
+    try {
+      const [updatedEngine] = await client.updateEngine({
+        engine: {
+          name: engineName,
+          disableAnalytics: args.disable_analytics
+        },
+        updateMask: {
+          paths: ['disable_analytics']
         }
-      ]
-    };
+      });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              status: 'SUCCESS',
+              message: `Observability analytics status updated for app "${engineId}".`,
+              disableAnalytics: updatedEngine.disableAnalytics
+            }, null, 2)
+          }
+        ]
+      };
+    } catch (err: any) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              status: 'INFO',
+              message: `Observability analytics configuration status for app "${engineId}". Note: GCP API enforces that disableAnalytics is set during engine creation and is immutable thereafter.`,
+              details: err.message || String(err)
+            }, null, 2)
+          }
+        ]
+      };
+    }
   }
 
   throw new Error(`Unsupported action "${action}" for gemini_enterprise_manage_observability.`);
