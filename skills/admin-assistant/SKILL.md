@@ -44,6 +44,7 @@ To manage Web App feature toggles, Search UI elements, Assistant prompt chips, o
 *   **Search UI & Shortcuts**: Use `gemini_enterprise_manage_search_ui` to manage autocomplete suggestions, user feedback rating widgets, or create pinned link shortcuts.
 *   **Assistant Instructions & Prompt Chips**: Use `gemini_enterprise_manage_assistant` to configure prompt chips and system instructions for the assistant.
 *   **Observability**: Use `gemini_enterprise_manage_observability` to inspect or update observability settings (`disable_analytics`, `enable_opentelemetry`, and `enable_prompt_logging`).
+*   **Knowledge Graph**: Use `gemini_enterprise_manage_knowledge_graph` to get or update Google Cloud Knowledge Graph (`enable_google_cloud_knowledge_graph`) and Private Knowledge Graph (`enable_private_knowledge_graph`), or use `enable_all_knowledge_graphs` / `disable_all_knowledge_graphs` to activate or deactivate both at once.
 
 ### 7. Prerequisites & Security Scopes
 Admin, licensing, and IAM capabilities are subject to strict access controls:

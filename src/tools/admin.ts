@@ -616,6 +616,49 @@ export const adminTools: any[] = [
       },
       required: ['action', 'engine_id']
     }
+  },
+  {
+    name: 'gemini_enterprise_manage_knowledge_graph',
+    description: 'Manage Google Cloud Knowledge Graph and Private Knowledge Graph configurations for Gemini Enterprise applications.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['get', 'update'],
+          description: 'The action to perform: get or update Knowledge Graph settings.'
+        },
+        project_id: {
+          type: 'string',
+          description: 'Optional. Google Cloud Project ID.'
+        },
+        location: {
+          type: 'string',
+          description: 'Optional. Google Cloud Region.'
+        },
+        engine_id: {
+          type: 'string',
+          description: 'ID of the app/engine. Required.'
+        },
+        enable_google_cloud_knowledge_graph: {
+          type: 'boolean',
+          description: "Enable or disable Google Cloud Knowledge Graph (public data from Google's Knowledge Graph)."
+        },
+        enable_private_knowledge_graph: {
+          type: 'boolean',
+          description: 'Enable or disable private Knowledge Graph (using data in your connected data stores).'
+        },
+        enable_all_knowledge_graphs: {
+          type: 'boolean',
+          description: 'Convenience flag to enable both Google Cloud and Private Knowledge Graph at once.'
+        },
+        disable_all_knowledge_graphs: {
+          type: 'boolean',
+          description: 'Convenience flag to disable both Google Cloud and Private Knowledge Graph at once.'
+        }
+      },
+      required: ['action', 'engine_id']
+    }
   }
 ];
 
@@ -666,6 +709,8 @@ export async function handleAdminToolCall(name: string, args: any): Promise<any>
       return await manageAssistant(args);
     case 'gemini_enterprise_manage_observability':
       return await manageObservability(args);
+    case 'gemini_enterprise_manage_knowledge_graph':
+      return await manageKnowledgeGraph(args);
     default:
       throw new Error(`Unknown admin tool: ${name}`);
   }
@@ -2516,5 +2561,98 @@ async function manageObservability(args: any): Promise<any> {
   }
 
   throw new Error(`Unsupported action "${action}" for gemini_enterprise_manage_observability.`);
+}
+
+async function manageKnowledgeGraph(args: any): Promise<any> {
+  const { projectId, location } = getGcpParams(args);
+  const parent = `projects/${projectId}/locations/${location}/collections/${config.collectionId}`;
+  const engineId = args.engine_id;
+  const engineName = `${parent}/engines/${engineId}`;
+  const action = args.action;
+
+  const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
+  const authClient = await auth.getClient();
+  const token = (await authClient.getAccessToken()).token;
+  const baseUrl = `https://global-discoveryengine.googleapis.com/v1alpha/${engineName}`;
+  const headers = {
+    'Authorization': `Bearer ${token}`,
+    'X-Goog-User-Project': projectId,
+    'Content-Type': 'application/json'
+  };
+
+  if (action === 'get') {
+    const resGet = await fetch(baseUrl, { headers });
+    const engine = await resGet.json();
+    const kgConfig = engine.knowledgeGraphConfig || {};
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            status: 'SUCCESS',
+            engine_id: engineId,
+            knowledge_graph_options: {
+              google_cloud_knowledge_graph: {
+                enabled: kgConfig.enableCloudKnowledgeGraph === true,
+                backend_field: 'knowledgeGraphConfig.enableCloudKnowledgeGraph',
+                description: "Enhances results with public data from Google's Knowledge Graph"
+              },
+              private_knowledge_graph: {
+                enabled: kgConfig.enablePrivateKnowledgeGraph === true,
+                backend_field: 'knowledgeGraphConfig.enablePrivateKnowledgeGraph',
+                description: 'Creates a Knowledge Graph using data in your connected data stores'
+              }
+            }
+          }, null, 2)
+        }
+      ]
+    };
+  }
+
+  if (action === 'update') {
+    const resGet = await fetch(baseUrl, { headers });
+    const existing = await resGet.json();
+    const kgConfig = existing.knowledgeGraphConfig || {};
+
+    if (args.enable_all_knowledge_graphs === true) {
+      kgConfig.enableCloudKnowledgeGraph = true;
+      kgConfig.enablePrivateKnowledgeGraph = true;
+    } else if (args.disable_all_knowledge_graphs === true) {
+      kgConfig.enableCloudKnowledgeGraph = false;
+      kgConfig.enablePrivateKnowledgeGraph = false;
+    } else {
+      if (args.enable_google_cloud_knowledge_graph !== undefined) {
+        kgConfig.enableCloudKnowledgeGraph = args.enable_google_cloud_knowledge_graph;
+      }
+      if (args.enable_private_knowledge_graph !== undefined) {
+        kgConfig.enablePrivateKnowledgeGraph = args.enable_private_knowledge_graph;
+      }
+    }
+
+    const resPatch = await fetch(`${baseUrl}?updateMask=knowledge_graph_config`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ knowledgeGraphConfig: kgConfig })
+    });
+    const updatedEngine = await resPatch.json();
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            status: 'SUCCESS',
+            message: `Knowledge Graph settings updated successfully for app "${engineId}".`,
+            knowledge_graph: {
+              google_cloud_knowledge_graph: updatedEngine.knowledgeGraphConfig?.enableCloudKnowledgeGraph === true,
+              private_knowledge_graph: updatedEngine.knowledgeGraphConfig?.enablePrivateKnowledgeGraph === true
+            }
+          }, null, 2)
+        }
+      ]
+    };
+  }
+
+  throw new Error(`Unsupported action "${action}" for gemini_enterprise_manage_knowledge_graph.`);
 }
 
