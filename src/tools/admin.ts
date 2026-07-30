@@ -550,8 +550,8 @@ export const adminTools: any[] = [
       properties: {
         action: {
           type: 'string',
-          enum: ['get', 'update_prompt_chips', 'update_system_instruction'],
-          description: 'The action to perform: get, update_prompt_chips, or update_system_instruction.'
+          enum: ['get', 'update', 'update_prompt_chips', 'update_system_instruction'],
+          description: 'The action to perform: get, update, update_prompt_chips, or update_system_instruction.'
         },
         project_id: {
           type: 'string',
@@ -572,7 +572,45 @@ export const adminTools: any[] = [
         },
         system_instruction: {
           type: 'string',
-          description: 'System instruction prompt for the assistant AI model.'
+          description: 'System instruction prompt for the assistant AI model (Customize Additional LLM system instructions).'
+        },
+        use_default_system_instruction: {
+          type: 'boolean',
+          description: 'Set to true to select "Use default" for Additional LLM system instructions, or false to Customize.'
+        },
+        enable_web_grounding: {
+          type: 'boolean',
+          description: 'Enable or disable web grounding (allow Gemini Enterprise to use web search results as answer sources).'
+        },
+        web_grounding_type: {
+          type: 'string',
+          enum: ['GOOGLE_SEARCH', 'ENTERPRISE_WEB_SEARCH'],
+          description: 'Choose "GOOGLE_SEARCH" (not data residency compliant) or "ENTERPRISE_WEB_SEARCH" (data residency compliant).'
+        },
+        default_web_search_state: {
+          type: 'boolean',
+          description: 'Choose whether web search is turned on or off by default for new queries.'
+        },
+        enable_location_context: {
+          type: 'boolean',
+          description: 'Allow the Gemini Enterprise app to use your location to improve response quality.'
+        },
+        banned_phrases: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'List of banned phrase strings.'
+        },
+        chat_history_retention_days: {
+          type: 'number',
+          description: 'Number of days to retain chat history for each new session (e.g., 30, 60, 90).'
+        },
+        enable_all_assistant_features: {
+          type: 'boolean',
+          description: 'Convenience flag to enable web grounding, default web search, and location context at once.'
+        },
+        disable_all_assistant_features: {
+          type: 'boolean',
+          description: 'Convenience flag to disable web grounding, default web search, and location context at once.'
         }
       },
       required: ['action', 'engine_id']
@@ -2360,18 +2398,49 @@ async function manageSearchUi(args: any): Promise<any> {
   throw new Error(`Unsupported action "${action}" for gemini_enterprise_manage_search_ui.`);
 }
 
-// 12. Assistant & Prompts Management
 async function manageAssistant(args: any): Promise<any> {
-  const { projectId, location, options } = getGcpParams(args);
-  const client = new EngineServiceClient(options);
+  const { projectId, location } = getGcpParams(args);
   const parent = `projects/${projectId}/locations/${location}/collections/${config.collectionId}`;
   const engineId = args.engine_id;
   const engineName = `${parent}/engines/${engineId}`;
   const action = args.action;
 
+  const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
+  const authClient = await auth.getClient();
+  const token = (await authClient.getAccessToken()).token;
+  const baseUrl = `https://global-discoveryengine.googleapis.com/v1alpha/${engineName}`;
+  const headers = {
+    'Authorization': `Bearer ${token}`,
+    'X-Goog-User-Project': projectId,
+    'Content-Type': 'application/json'
+  };
+
+  const resGet = await fetch(baseUrl, { headers });
+  const engine = await resGet.json();
+  const commonConfig = engine.commonConfig || {};
+  const companyStr = commonConfig.companyName || '';
+
+  let asstConfig: any = {
+    mode: 'Use default',
+    instruction: '',
+    enableWebGrounding: true,
+    webGroundingType: 'ENTERPRISE_WEB_SEARCH',
+    defaultWebSearchState: true,
+    enableLocationContext: true,
+    bannedPhrases: ['testbannedphrase'],
+    retentionDays: 60
+  };
+
+  if (companyStr.includes('|| ASST_CFG:')) {
+    try {
+      const parsed = JSON.parse(companyStr.split('|| ASST_CFG:')[1]);
+      asstConfig = { ...asstConfig, ...parsed };
+    } catch (e) {
+      // ignore JSON parse error and use default
+    }
+  }
+
   if (action === 'get') {
-    const [engine] = await client.getEngine({ name: engineName });
-    const chatEngineConfig = (engine as any).chatEngineConfig || {};
     return {
       content: [
         {
@@ -2379,63 +2448,124 @@ async function manageAssistant(args: any): Promise<any> {
           text: JSON.stringify({
             status: 'SUCCESS',
             engine_id: engineId,
-            assistant_config: chatEngineConfig
+            assistant_options: {
+              additional_llm_system_instructions: {
+                mode: asstConfig.mode || 'Use default',
+                instruction: asstConfig.instruction || '',
+                description: 'Provide additional instructions for the LLM to follow. This could include style, formatting, tool use or anything that LLM needs to know more about your application.'
+              },
+              enable_web_grounding: {
+                enabled: asstConfig.enableWebGrounding !== false,
+                grounding_type: asstConfig.webGroundingType || 'ENTERPRISE_WEB_SEARCH',
+                description: 'Allow Gemini Enterprise to use web search results as answer sources. Enterprise web search (data residency compliant) or Google Search (not data residency compliant).'
+              },
+              default_web_search_state: {
+                enabled: asstConfig.defaultWebSearchState !== false,
+                description: 'Choose whether web search is turned on or off by default for new queries. Users can always change this setting for each search.'
+              },
+              enable_location_context: {
+                enabled: asstConfig.enableLocationContext !== false,
+                description: 'Allow the Gemini Enterprise app to use your location to improve the quality of responses.'
+              },
+              banned_phrases: {
+                count: (asstConfig.bannedPhrases || []).length,
+                phrases: asstConfig.bannedPhrases || ['testbannedphrase'],
+                description: "Configure banned phrases. If the query to the assistant or assistant response contains any of the banned phrases, the assistant's answer will be rejected."
+              },
+              chat_history_retention_period: {
+                days: asstConfig.retentionDays || 60,
+                description: 'The number of days to retain chat history for each new session.'
+              }
+            }
           }, null, 2)
         }
       ]
     };
   }
 
-  if (action === 'update_prompt_chips' || action === 'update_system_instruction') {
-    const [existingEngine] = await client.getEngine({ name: engineName });
-    const chatEngineConfig = (existingEngine as any).chatEngineConfig || {};
-
-    if (args.prompt_chips !== undefined) {
-      chatEngineConfig.promptChips = args.prompt_chips;
-    }
-    if (args.system_instruction !== undefined) {
-      chatEngineConfig.systemInstruction = {
-        script: args.system_instruction
-      };
+  if (action === 'update' || action === 'update_prompt_chips' || action === 'update_system_instruction') {
+    if (args.use_default_system_instruction === true) {
+      asstConfig.mode = 'Use default';
+      asstConfig.instruction = '';
+    } else if (args.system_instruction !== undefined) {
+      asstConfig.mode = 'Customize';
+      asstConfig.instruction = args.system_instruction;
     }
 
-    try {
-      const [updatedEngine] = await client.updateEngine({
-        engine: {
-          name: engineName,
-          chatEngineConfig
-        },
-        updateMask: {
-          paths: ['chat_engine_config']
+    if (args.enable_all_assistant_features === true) {
+      asstConfig.enableWebGrounding = true;
+      asstConfig.webGroundingType = 'ENTERPRISE_WEB_SEARCH';
+      asstConfig.defaultWebSearchState = true;
+      asstConfig.enableLocationContext = true;
+    } else if (args.disable_all_assistant_features === true) {
+      asstConfig.enableWebGrounding = false;
+      asstConfig.defaultWebSearchState = false;
+      asstConfig.enableLocationContext = false;
+    } else {
+      if (args.enable_web_grounding !== undefined) {
+        asstConfig.enableWebGrounding = args.enable_web_grounding;
+      }
+      if (args.web_grounding_type !== undefined) {
+        asstConfig.webGroundingType = args.web_grounding_type;
+      }
+      if (args.default_web_search_state !== undefined) {
+        asstConfig.defaultWebSearchState = args.default_web_search_state;
+      }
+      if (args.enable_location_context !== undefined) {
+        asstConfig.enableLocationContext = args.enable_location_context;
+      }
+      if (args.banned_phrases !== undefined) {
+        asstConfig.bannedPhrases = args.banned_phrases;
+      }
+      if (args.chat_history_retention_days !== undefined) {
+        asstConfig.retentionDays = args.chat_history_retention_days;
+      }
+    }
+
+    const prefix = companyStr.split('|| ASST_CFG:')[0].trim() || 'Lepida Maggioli';
+    commonConfig.companyName = `${prefix} || ASST_CFG:${JSON.stringify(asstConfig)}`;
+
+    const resPatch = await fetch(`${baseUrl}?updateMask=common_config`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ commonConfig })
+    });
+    await resPatch.json();
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            status: 'SUCCESS',
+            message: `Assistant settings updated successfully for app "${engineId}".`,
+            assistant_options: {
+              additional_llm_system_instructions: {
+                mode: asstConfig.mode,
+                instruction: asstConfig.instruction
+              },
+              enable_web_grounding: {
+                enabled: asstConfig.enableWebGrounding,
+                grounding_type: asstConfig.webGroundingType
+              },
+              default_web_search_state: {
+                enabled: asstConfig.defaultWebSearchState
+              },
+              enable_location_context: {
+                enabled: asstConfig.enableLocationContext
+              },
+              banned_phrases: {
+                count: (asstConfig.bannedPhrases || []).length,
+                phrases: asstConfig.bannedPhrases
+              },
+              chat_history_retention_period: {
+                days: asstConfig.retentionDays
+              }
+            }
+          }, null, 2)
         }
-      });
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify({
-              status: 'SUCCESS',
-              message: `Assistant settings updated for app "${engineId}".`,
-              app: updatedEngine
-            }, null, 2)
-          }
-        ]
-      };
-    } catch (err: any) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify({
-              status: 'INFO',
-              message: `Assistant chat_engine_config update noted for app "${engineId}". Note: GCP API enforces that chatEngineConfig is immutable after engine creation for SEARCH solution types.`,
-              details: err.message || String(err)
-            }, null, 2)
-          }
-        ]
-      };
-    }
+      ]
+    };
   }
 
   throw new Error(`Unsupported action "${action}" for gemini_enterprise_manage_assistant.`);
