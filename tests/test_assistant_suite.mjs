@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const serverPath = join(__dirname, '../build/index.js');
 
-const targetEngineId = 'tes';
+const targetEngineId = process.env.TARGET_ENGINE_ID || 'tes';
 
 const transport = new StdioClientTransport({
   command: 'node',
@@ -15,11 +15,11 @@ const transport = new StdioClientTransport({
   env: {
     ...process.env,
     PATH: `/opt/homebrew/bin:${process.env.PATH}`,
-    GCP_PROJECT: 'rootprj-377111',
-    GCP_LOCATION: 'global',
-    GCP_COLLECTION: 'default_collection',
-    GOOGLE_CLOUD_QUOTA_PROJECT: 'rootprj-377111',
-    MCP_SCOPES: 'search,admin,billing',
+    GCP_PROJECT: process.env.GCP_PROJECT || 'rootprj-377111',
+    GCP_LOCATION: process.env.GCP_LOCATION || 'global',
+    GCP_COLLECTION: process.env.GCP_COLLECTION || 'default_collection',
+    GOOGLE_CLOUD_QUOTA_PROJECT: process.env.GOOGLE_CLOUD_QUOTA_PROJECT || 'rootprj-377111',
+    MCP_SCOPES: process.env.MCP_SCOPES || 'search,admin,billing',
   }
 });
 
