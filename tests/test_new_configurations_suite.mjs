@@ -15,11 +15,11 @@ const transport = new StdioClientTransport({
   env: {
     ...process.env,
     PATH: `/opt/homebrew/bin:${process.env.PATH}`,
-    GCP_PROJECT: 'rootprj-377111',
-    GCP_LOCATION: 'global',
-    GCP_COLLECTION: 'default_collection',
-    GOOGLE_CLOUD_QUOTA_PROJECT: 'rootprj-377111',
-    MCP_SCOPES: 'search,admin,billing',
+    GCP_PROJECT: process.env.GCP_PROJECT || 'giorgioc-cloud-apps',
+    GCP_LOCATION: process.env.GCP_LOCATION || 'global',
+    GCP_COLLECTION: process.env.GCP_COLLECTION || 'default_collection',
+    GOOGLE_CLOUD_QUOTA_PROJECT: process.env.GOOGLE_CLOUD_QUOTA_PROJECT || 'giorgioc-cloud-apps',
+    MCP_SCOPES: process.env.MCP_SCOPES || 'search,admin,billing',
   }
 });
 

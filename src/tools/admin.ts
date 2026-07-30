@@ -533,7 +533,7 @@ export const adminTools: any[] = [
           type: 'object',
           properties: {
             title: { type: 'string', description: 'Title or link text for the shortcut link.' },
-            uri: { type: 'string', description: 'Target URL for the shortcut link (e.g. https://www.lepida.net/).' },
+            uri: { type: 'string', description: 'Target URL for the shortcut link (e.g. https://www.example.com/).' },
             link_id: { type: 'string', description: 'Optional unique ID for the shortcut link control.' }
           },
           required: ['title', 'uri']
@@ -2522,7 +2522,7 @@ async function manageAssistant(args: any): Promise<any> {
       }
     }
 
-    const prefix = companyStr.split('|| ASST_CFG:')[0].trim() || 'Lepida Maggioli';
+    const prefix = companyStr.split('|| ASST_CFG:')[0].trim() || 'My Organization';
     commonConfig.companyName = `${prefix} || ASST_CFG:${JSON.stringify(asstConfig)}`;
 
     const resPatch = await fetch(`${baseUrl}?updateMask=common_config`, {

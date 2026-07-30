@@ -15,10 +15,10 @@ const transport = new StdioClientTransport({
   env: {
     ...process.env,
     PATH: `/opt/homebrew/bin:${process.env.PATH}`,
-    GCP_PROJECT: process.env.GCP_PROJECT || 'rootprj-377111',
+    GCP_PROJECT: process.env.GCP_PROJECT || 'giorgioc-cloud-apps',
     GCP_LOCATION: process.env.GCP_LOCATION || 'global',
     GCP_COLLECTION: process.env.GCP_COLLECTION || 'default_collection',
-    GOOGLE_CLOUD_QUOTA_PROJECT: process.env.GOOGLE_CLOUD_QUOTA_PROJECT || 'rootprj-377111',
+    GOOGLE_CLOUD_QUOTA_PROJECT: process.env.GOOGLE_CLOUD_QUOTA_PROJECT || 'giorgioc-cloud-apps',
     MCP_SCOPES: process.env.MCP_SCOPES || 'search,admin,billing',
   }
 });
@@ -40,7 +40,7 @@ async function run() {
     arguments: {
       action: 'update',
       engine_id: targetEngineId,
-      system_instruction: 'Sei un assistente AI specializzato per Lepida e Maggioli.',
+      system_instruction: 'You are a helpful Gemini Enterprise AI assistant.',
       enable_web_grounding: true,
       web_grounding_type: 'ENTERPRISE_WEB_SEARCH',
       default_web_search_state: true,
