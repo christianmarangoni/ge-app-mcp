@@ -1,6 +1,6 @@
 {
   "name": "ge-app-mcp",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Gemini Enterprise Model Context Protocol (MCP) Server",
   "main": "build/index.js",
   "bin": {
@@ -11,8 +11,12 @@
     "build": "tsc",
     "start": "node build/index.js",
     "dev": "node --loader ts-node/esm src/index.ts",
-    "test": "node tests/test_mcp_client.mjs && node tests/test_mcp_scopes.mjs",
+    "pretest": "npm run build",
+    "test": "node tests/test_mcp_client.mjs && node tests/test_mcp_scopes.mjs && node tests/test_smoke_api_contract.mjs && node tests/test_format_references.mjs",
     "test:configurations": "node tests/test_feature_management_consolidated.mjs && node tests/test_knowledge_graph.mjs && node tests/test_assistant_suite.mjs"
+  },
+  "overrides": {
+    "brace-expansion": "^2.0.1"
   },
   "keywords": [
     "mcp",

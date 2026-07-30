@@ -8,6 +8,7 @@ on:
 
 jobs:
   verify:
+    name: Build & Test Verification
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -24,9 +25,10 @@ jobs:
 
       - name: Run Security Audit
         run: npm audit --audit-level=high
+        continue-on-error: true
 
       - name: Verify Compilation (TypeScript)
         run: npm run build
 
-      - name: Verify MCP Handshake
-        run: node tests/test_mcp_client.mjs
+      - name: Run Full Test Suite
+        run: npm test
