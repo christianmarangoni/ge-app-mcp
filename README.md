@@ -3,7 +3,7 @@
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
 [![Model Context Protocol](https://img.shields.io/badge/MCP-Compatible-green.svg)](https://modelcontextprotocol.io/)
-[![Socket Badge](https://badge.socket.dev/npm/package/ge-app-mcp/0.1.1)](https://badge.socket.dev/npm/package/ge-app-mcp/0.1.1)
+[![Socket Badge](https://badge.socket.dev/npm/package/ge-app-mcp/latest)](https://badge.socket.dev/npm/package/ge-app-mcp/latest)
 
 Welcome to the **Gemini Enterprise MCP Server**.
 
