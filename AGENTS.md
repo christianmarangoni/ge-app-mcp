@@ -226,39 +226,56 @@ The repository includes a suite of specialized test files to validate changes. *
     ```bash
     node tests/test_mcp_client.mjs
     ```
-2.  **Read-Only Integration (`test_suite_readonly.mjs`)**:
+2.  **API Contract & SDK Smoke Testing (`test_smoke_api_contract.mjs`)**:
+    Validates MCP tool schemas, required argument mappings, and SDK Client / Proto bindings against official `@google-cloud/discoveryengine` API definitions without requiring live GCP credentials.
+    ```bash
+    node tests/test_smoke_api_contract.mjs
+    ```
+3.  **Read-Only Integration (`test_suite_readonly.mjs`)**:
     Validates GCP credentials and read operations (scans datastores, schemas, target sites, and executes queries).
     ```bash
     node tests/test_suite_readonly.mjs
     ```
-3.  **Safe Write Lifecycle (`test_admin_write.mjs`)**:
+4.  **Safe Write Lifecycle (`test_admin_write.mjs`)**:
     Performs synonym control creation, lists configurations to verify existence, and immediately deletes the control. No residues are left in the GCP project.
     ```bash
     node tests/test_admin_write.mjs
     ```
-4.  **Native Agent Lifecycle (`test_agents_write.mjs`)**:
+5.  **Native Agent Lifecycle (`test_agents_write.mjs`)**:
     Executes native Discovery Engine Agent creation, listing, update, and deletion lifecycle. Leaves zero leftover resource residues in the GCP project.
     ```bash
     node tests/test_agents_write.mjs
     ```
-5.  **Low-Code Agent Lifecycle (`test_low_code_agents.mjs`)**:
+6.  **Low-Code Agent Lifecycle (`test_low_code_agents.mjs`)**:
     Validates native, employee-made low-code agent creation, listing, and deletion. Leaves zero residue in GCP.
     ```bash
     node tests/test_low_code_agents.mjs
     ```
-6.  **App IAM Policy Lifecycle (`test_iam.mjs`)**:
+7.  **App IAM Policy Lifecycle (`test_iam.mjs`)**:
     Validates App/Engine IAM policy reading, parsing, and writing roundtrip. Leaves zero residues in GCP.
     ```bash
     node tests/test_iam.mjs
     ```
-7.  **Security Scope Enforcement (`test_mcp_scopes.mjs`)**:
+8.  **Security Scope Enforcement (`test_mcp_scopes.mjs`)**:
     Spawns multiple handshakes with varied `MCP_SCOPES` variables (e.g. `search` only, `search,billing`, full scope) and verifies that unauthorized tool calls are securely blocked at the gatekeeper level.
     ```bash
     node tests/test_mcp_scopes.mjs
     ```
 
+---
+
+### ⚠️ MANDATORY TESTING PROTOCOL FOR GOOGLE CLOUD INTEGRATIONS
+
+> **STRICT RULE FOR ALL AI CODING AGENTS**:
+> Whenever you add a new tool, modify an existing tool schema, or update any Google Cloud API integration in this repository:
+> 1. You **MUST** write or update the corresponding integration test script under `tests/`.
+> 2. You **MUST** update the API contract smoke test suite (`tests/test_smoke_api_contract.mjs`) to include the tool mapping, required parameters, and official GCP SDK Client / Proto bindings.
+> 3. You **MUST** run `npm test` locally and verify that all unit/integration and smoke tests pass cleanly before committing code.
+
 ### 📋 AI Verification Checklist
 - [ ] TypeScript compilation succeeds with zero errors: `npm run build`.
 - [ ] Handshake test succeeds: `node tests/test_mcp_client.mjs` displays correct schemas.
+- [ ] API Contract Smoke test succeeds: `node tests/test_smoke_api_contract.mjs` verifies tool schemas and GCP SDK bindings.
 - [ ] Security scope suite executes cleanly: `node tests/test_mcp_scopes.mjs` reports `PASS` on all security gates.
+- [ ] Full test suite succeeds: `npm test` executes cleanly.
 - [ ] All code modifications, comment additions, and documentation changes are written in English.
