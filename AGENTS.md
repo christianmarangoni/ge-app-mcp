@@ -50,6 +50,12 @@ ge-app-mcp/
 | `gemini_enterprise_manage_controls`| `tools/admin.ts` | Sync synonym, boost, and filter controls. | `ControlServiceClient` |
 | `gemini_enterprise_manage_agents`  | `tools/admin.ts` | Create, list, delete, and update native Discovery Engine Agents. | `AgentService` REST API (`v1alpha`) |
 | `gemini_enterprise_manage_skills`  | `tools/admin.ts` | Manage Vertex AI platform Skills inside the Skill Registry. | REST API (`v1beta1`) |
+| `gemini_enterprise_manage_features`| `tools/admin.ts` | Manage 27 Web App end-user feature toggles. | REST API (`v1alpha`) |
+| `gemini_enterprise_manage_models`  | `tools/admin.ts` | Manage Gemini model availability toggles. | REST API (`v1alpha`) |
+| `gemini_enterprise_manage_search_ui`| `tools/admin.ts` | Manage search UI, autocomplete, and shortcuts. | REST API (`v1alpha`) |
+| `gemini_enterprise_manage_assistant`| `tools/admin.ts` | Manage assistant prompts, grounding, and instructions. | REST API (`v1alpha`) |
+| `gemini_enterprise_manage_observability`| `tools/admin.ts` | Manage OpenTelemetry and prompt logging. | REST API (`v1alpha`) |
+| `gemini_enterprise_manage_knowledge_graph`| `tools/admin.ts` | Manage Cloud and Private Knowledge Graphs. | REST API (`v1alpha`) |
 | `gemini_enterprise_manage_target_sites`| `tools/admin.ts` | Administer crawled website URI patterns.| `SiteSearchEngineServiceClient` / REST |
 | `gemini_enterprise_configure_connector`| `tools/admin.ts` | SaaS connectors simulation flow. | Simulated Connector Lifecycle |
 | `gemini_enterprise_manage_licenses`| `tools/billing.ts`| Live seat assignments & licensing pools. | Global REST `licenseConfigs` & `userLicenses` |
