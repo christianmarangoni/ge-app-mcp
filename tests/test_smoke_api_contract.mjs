@@ -74,6 +74,36 @@ const EXPECTED_GCP_MAPPINGS = {
     client: 'UserLicenseServiceClient',
     proto: 'google.cloud.discoveryengine.v1.UserLicense',
     requiredArgs: ['action']
+  },
+  gemini_enterprise_manage_features: {
+    client: 'EngineServiceClient',
+    proto: 'google.cloud.discoveryengine.v1.Engine',
+    requiredArgs: ['action', 'engine_id']
+  },
+  gemini_enterprise_manage_models: {
+    client: 'EngineServiceClient',
+    proto: 'google.cloud.discoveryengine.v1.Engine',
+    requiredArgs: ['action', 'engine_id']
+  },
+  gemini_enterprise_manage_search_ui: {
+    client: 'EngineServiceClient',
+    proto: 'google.cloud.discoveryengine.v1.Engine',
+    requiredArgs: ['action', 'engine_id']
+  },
+  gemini_enterprise_manage_assistant: {
+    client: 'EngineServiceClient',
+    proto: 'google.cloud.discoveryengine.v1.Engine',
+    requiredArgs: ['action', 'engine_id']
+  },
+  gemini_enterprise_manage_observability: {
+    client: 'EngineServiceClient',
+    proto: 'google.cloud.discoveryengine.v1.Engine',
+    requiredArgs: ['action', 'engine_id']
+  },
+  gemini_enterprise_manage_knowledge_graph: {
+    client: 'EngineServiceClient',
+    proto: 'google.cloud.discoveryengine.v1.Engine',
+    requiredArgs: ['action', 'engine_id']
   }
 };
 
