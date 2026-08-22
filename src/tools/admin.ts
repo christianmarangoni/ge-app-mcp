@@ -835,13 +835,50 @@ async function manageApps(args: any): Promise<any> {
       };
     }
 
-    const [operation] = await client.createEngine({
-      parent,
-      engineId,
-      engine: enginePayload
+    const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
+    const authClient = await auth.getClient();
+    const token = (await authClient.getAccessToken()).token;
+    
+    // For specific GCP region routing, ensure host matches location
+    const host = location && location !== 'global' ? `${location}-discoveryengine.googleapis.com` : 'discoveryengine.googleapis.com';
+    const restBaseUrl = `https://${host}/v1alpha/${parent}/engines?engineId=${engineId}`;
+
+    const res = await fetch(restBaseUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'X-Goog-User-Project': projectId,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(enginePayload)
     });
 
-    const [createdEngine] = await operation.promise();
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Failed to create engine via REST: ${res.status} ${res.statusText}. Details: ${errText}`);
+    }
+
+    let operation = await res.json();
+    const lroName = operation.name;
+    
+    // Poll the Long Running Operation
+    while (!operation.done) {
+      await new Promise(r => setTimeout(r, 3000));
+      const opRes = await fetch(`https://${host}/v1alpha/${lroName}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'X-Goog-User-Project': projectId
+        }
+      });
+      operation = await opRes.json();
+    }
+
+    if (operation.error) {
+      throw new Error(`Engine creation failed: ${JSON.stringify(operation.error)}`);
+    }
+
+    const finalEngine = operation.response || {};
+    
     return {
       content: [
         {
@@ -850,9 +887,9 @@ async function manageApps(args: any): Promise<any> {
             status: 'SUCCESS',
             message: `App "${engineId}" created successfully.`,
             app: {
-              name: createdEngine.name,
-              displayName: createdEngine.displayName,
-              solutionType: createdEngine.solutionType
+              name: finalEngine.name,
+              displayName: finalEngine.displayName,
+              solutionType: finalEngine.solutionType
             }
           }, null, 2)
         }
