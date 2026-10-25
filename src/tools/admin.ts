@@ -835,9 +835,7 @@ async function manageApps(args: any): Promise<any> {
       };
     }
 
-    const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
-    const authClient = await auth.getClient();
-    const token = (await authClient.getAccessToken()).token;
+    const headers = await getAuthHeaders(projectId);
     
     // For specific GCP region routing, ensure host matches location
     const host = location && location !== 'global' ? `${location}-discoveryengine.googleapis.com` : 'discoveryengine.googleapis.com';
@@ -845,11 +843,7 @@ async function manageApps(args: any): Promise<any> {
 
     const res = await fetch(restBaseUrl, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'X-Goog-User-Project': projectId,
-        'Content-Type': 'application/json'
-      },
+      headers,
       body: JSON.stringify(enginePayload)
     });
 
@@ -861,15 +855,21 @@ async function manageApps(args: any): Promise<any> {
     let operation = await res.json();
     const lroName = operation.name;
     
-    // Poll the Long Running Operation
+    // Poll the Long Running Operation with timeout guard (max 5 minutes)
+    const startTime = Date.now();
+    const MAX_POLL_MS = 5 * 60 * 1000;
     while (!operation.done) {
+      if (Date.now() - startTime > MAX_POLL_MS) {
+        throw new Error(`Timeout waiting for engine creation LRO "${lroName}" to complete.`);
+      }
       await new Promise(r => setTimeout(r, 3000));
       const opRes = await fetch(`https://${host}/v1alpha/${lroName}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'X-Goog-User-Project': projectId
-        }
+        headers
       });
+      if (!opRes.ok) {
+        const opErrText = await opRes.text();
+        throw new Error(`Failed to poll LRO "${lroName}": ${opRes.status} ${opRes.statusText}. Details: ${opErrText}`);
+      }
       operation = await opRes.json();
     }
 
